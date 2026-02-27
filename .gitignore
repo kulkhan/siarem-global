@@ -1,0 +1,41 @@
+node_modules/
+dist/
+build/
+.env
+.env.production
+*.local
+*.dmp
+NUL
+*.zip
+*.rar
+
+# uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# prisma - migrations MUST be committed (needed for prisma migrate deploy)
+# backend/prisma/migrations/
+
+# logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+.claude/
+
+# temp files
+*.xlsx
+*.xls
+/parse_*.js
+/tmp/
+
+# Sensitive internal notes (contain passwords/credentials)
+Docs/notes.txt
+Docs/users.txt
+backend/notes.txt

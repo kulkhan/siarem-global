@@ -1,0 +1,437 @@
+{
+  "auth": {
+    "title": "oddyCRM",
+    "subtitle": "Denizcilik CRM Sistemi",
+    "login": "Giriş Yap",
+    "email": "E-posta",
+    "emailPlaceholder": "ornek@oddyship.com",
+    "password": "Şifre",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Giriş Yap",
+    "loggingIn": "Giriş yapılıyor...",
+    "invalidCredentials": "E-posta veya şifre hatalı",
+    "emailRequired": "E-posta zorunludur",
+    "emailInvalid": "Geçerli bir e-posta girin",
+    "passwordRequired": "Şifre zorunludur"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "customers": "Müşteriler",
+    "ships": "Gemiler",
+    "services": "Hizmetler",
+    "quotes": "Teklifler",
+    "invoices": "Faturalar",
+    "meetings": "Toplantılar",
+    "expenses": "Masraflar",
+    "documents": "Dokümanlar",
+    "reports": "Raporlar",
+    "settings": "Ayarlar"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "openServices": "Açık Hizmetler",
+    "pendingQuotes": "Bekleyen Teklifler",
+    "monthInvoices": "Bu Ay Faturalar",
+    "overduePayments": "Geciken Ödemeler",
+    "welcomeBack": "Hoş geldiniz",
+    "todayDate": "Bugün"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Hata",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor...",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "add": "Ekle",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "export": "Dışa Aktar",
+    "noData": "Veri bulunamadı",
+    "actions": "İşlemler",
+    "logout": "Çıkış Yap",
+    "profile": "Profil",
+    "back": "Geri",
+    "confirm": "Onayla",
+    "yes": "Evet",
+    "no": "Hayır",
+    "all": "Tümü",
+    "deleteConfirm": "Bu kaydı silmek istediğinize emin misiniz?",
+    "cannotDelete": "Silinemez",
+    "selectRow": "Bir satır seçin",
+    "page": "Sayfa",
+    "total": "Toplam",
+    "reset": "Sıfırla"
+  },
+  "status": {
+    "active": "Aktif",
+    "passive": "Pasif",
+    "sold": "Satıldı",
+    "scrapped": "Hurdaya Ayrıldı",
+    "open": "Açık",
+    "inProgress": "Devam Ediyor",
+    "completed": "Tamamlandı",
+    "cancelled": "İptal Edildi",
+    "onHold": "Beklemede",
+    "draft": "Taslak",
+    "sent": "Gönderildi",
+    "approved": "Onaylandı",
+    "rejected": "Reddedildi",
+    "revised": "Revize Edildi",
+    "paid": "Ödendi",
+    "partiallyPaid": "Kısmi Ödendi",
+    "overdue": "Gecikti"
+  },
+  "expenses": {
+    "title": "Masraflar",
+    "addTitle": "Yeni Kayıt",
+    "editTitle": "Kaydı Düzenle",
+    "deleteConfirm": "Bu kaydı silmek istediğinizden emin misiniz?",
+    "type": {
+      "INCOME": "Gelir",
+      "EXPENSE": "Gider"
+    },
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "links": "Bağlantılar",
+      "notes": "Not"
+    },
+    "fields": {
+      "type": "Tür",
+      "category": "Kategori",
+      "description": "Açıklama",
+      "amount": "Tutar",
+      "currency": "Para Birimi",
+      "date": "Tarih",
+      "customer": "Müşteri",
+      "ship": "Gemi",
+      "service": "Hizmet",
+      "notes": "Not"
+    },
+    "filter": {
+      "search": "Açıklama veya müşteri ara..."
+    },
+    "summary": {
+      "income": "Toplam Gelir",
+      "expense": "Toplam Gider",
+      "net": "Net Bakiye"
+    },
+    "categories": {
+      "Personnel": "Personel",
+      "Office": "Ofis",
+      "Travel": "Seyahat",
+      "Service Cost": "Hizmet Maliyeti",
+      "Equipment": "Ekipman",
+      "Software": "Yazılım",
+      "Marketing": "Pazarlama",
+      "Tax": "Vergi",
+      "Other": "Diğer"
+    }
+  },
+  "contacts": {
+    "title": "Kişiler",
+    "add": "Kişi Ekle",
+    "edit": "Kişi Düzenle",
+    "noContacts": "Henüz kişi eklenmemiş",
+    "fields": {
+      "name": "Ad Soyad",
+      "title": "Unvan",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "isPrimary": "Birincil kişi",
+      "notes": "Not"
+    }
+  },
+  "meetings": {
+    "title": "Toplantılar & Aramalar",
+    "addTitle": "Yeni Kayıt",
+    "editTitle": "Kayıt Düzenle",
+    "deleteConfirm": "Bu kaydı silmek istediğinizden emin misiniz?",
+    "detail": "Detay",
+    "minutes": "dakika",
+    "type": {
+      "MEETING": "Toplantı",
+      "CALL": "Telefon Araması"
+    },
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "dateLocation": "Tarih & Yer",
+      "details": "Detaylar"
+    },
+    "fields": {
+      "type": "Tür",
+      "customer": "Müşteri",
+      "ship": "Gemi",
+      "title": "Başlık",
+      "description": "Açıklama",
+      "location": "Yer",
+      "duration": "Süre (dakika)",
+      "date": "Tarih",
+      "followUpDate": "Takip Tarihi",
+      "attendees": "Katılımcılar",
+      "notes": "Notlar",
+      "createdBy": "Oluşturan"
+    },
+    "filter": {
+      "search": "Başlık veya müşteri ara..."
+    }
+  },
+  "customers": {
+    "title": "Müşteriler",
+    "addTitle": "Yeni Müşteri",
+    "editTitle": "Müşteri Düzenle",
+    "detail": "Müşteri Detayı",
+    "deleteConfirm": "\"{{name}}\" müşterisini silmek istediğinize emin misiniz?",
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "contact": "İletişim & Adres",
+      "ships": "Bağlı Gemiler"
+    },
+    "fields": {
+      "shortCode": "Kısa Kod",
+      "shortCodeHint": "Benzersiz tanımlayıcı (örn. ADTOR)",
+      "name": "Firma Adı",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "address": "Adres",
+      "country": "Ülke",
+      "taxNumber": "Vergi No",
+      "notes": "Notlar",
+      "shipCount": "Gemi",
+      "status": "Durum"
+    },
+    "filter": {
+      "search": "Müşteri ara...",
+      "country": "Ülke",
+      "status": "Durum"
+    },
+    "assignees": {
+      "title": "Müşteri Temsilcileri",
+      "select": "Temsilci seçin...",
+      "none": "Henüz temsilci atanmadı",
+      "remove": "Temsilciyi kaldır"
+    }
+  },
+  "services": {
+    "title": "Hizmetler",
+    "addTitle": "Yeni Hizmet",
+    "editTitle": "Hizmet Düzenle",
+    "deleteConfirm": "Bu hizmeti silmek istediğinize emin misiniz?",
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "statusDetails": "Durum & Öncelik",
+      "compliance": "Uyumluluk Durumları",
+      "notes": "Notlar"
+    },
+    "fields": {
+      "customer": "Müşteri",
+      "ship": "Gemi",
+      "serviceType": "Hizmet Tipi",
+      "assignedUser": "Sorumlu",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "startDate": "Başlangıç Tarihi",
+      "completedAt": "Tamamlanma Tarihi",
+      "statusNote": "Durum Notu",
+      "notes": "Notlar",
+      "euMrvMpStatus": "EU MRV MP",
+      "ukMrvMpStatus": "UK MRV MP",
+      "fuelEuMpStatus": "Fuel EU MP",
+      "imoDcsStatus": "IMO DCS",
+      "euEtsStatus": "EU ETS",
+      "mohaStatus": "MOHA"
+    },
+    "filter": {
+      "search": "Müşteri veya gemi ara...",
+      "serviceType": "Hizmet Tipi",
+      "status": "Durum",
+      "priority": "Öncelik"
+    },
+    "priority": {
+      "LOW": "Düşük",
+      "MEDIUM": "Orta",
+      "HIGH": "Yüksek",
+      "URGENT": "Acil"
+    },
+    "billing": {
+      "title": "Faturalama Süreci",
+      "ready": "Fatura Kesilebilir",
+      "draft": "Taslak Fatura",
+      "sent": "Fatura Gönderildi",
+      "paid": "Fatura Ödendi",
+      "invoiceReadyNote": "Not",
+      "noInvoice": "Fatura yok"
+    },
+    "history": {
+      "title": "İşlem Geçmişi",
+      "noHistory": "Henüz kayıt yok",
+      "CREATED": "Oluşturuldu",
+      "STATUS_CHANGED": "Durum değişti",
+      "BILLING_READY": "Fatura hazır işaretlendi",
+      "ASSIGNED": "Atama değişti",
+      "UPDATED": "Güncellendi"
+    },
+    "detail": "Hizmet Detayı",
+    "fields_invoiceReady": "Fatura Kesilebilir"
+  },
+  "quotes": {
+    "title": "Teklifler",
+    "addTitle": "Yeni Teklif",
+    "editTitle": "Teklif Düzenle",
+    "deleteConfirm": "Bu teklifi silmek istediğinizden emin misiniz?",
+    "detail": "Teklif Detayı",
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "pricing": "Fiyatlandırma",
+      "dates": "Tarihler",
+      "invoices": "Faturalar",
+      "notes": "Notlar"
+    },
+    "fields": {
+      "quoteNumber": "Teklif No",
+      "customer": "Müşteri",
+      "service": "Hizmet",
+      "status": "Durum",
+      "quoteDate": "Teklif Tarihi",
+      "validUntil": "Geçerlilik Tarihi",
+      "priceEur": "Fiyat (EUR)",
+      "priceUsd": "Fiyat (USD)",
+      "priceTry": "Fiyat (TRY)",
+      "shipCount": "Gemi Sayısı",
+      "combinedInvoice": "Birleşik Fatura",
+      "notes": "Notlar",
+      "createdBy": "Oluşturan"
+    },
+    "filter": {
+      "search": "Teklif no veya müşteri ara...",
+      "status": "Durum"
+    }
+  },
+  "invoices": {
+    "title": "Faturalar",
+    "addTitle": "Yeni Fatura",
+    "editTitle": "Fatura Düzenle",
+    "deleteConfirm": "Bu faturayı silmek istediğinizden emin misiniz?",
+    "detail": "Fatura Detayı",
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "amount": "Tutar & Durum",
+      "dates": "Tarihler",
+      "payments": "Ödemeler",
+      "notes": "Notlar"
+    },
+    "fields": {
+      "refNo": "Fatura No",
+      "customer": "Müşteri",
+      "service": "Hizmet",
+      "amount": "Tutar",
+      "currency": "Para Birimi",
+      "status": "Durum",
+      "invoiceDate": "Fatura Tarihi",
+      "dueDate": "Vade Tarihi",
+      "sentAt": "Gönderim Tarihi",
+      "isCombined": "Kombine Fatura",
+      "notes": "Notlar",
+      "createdBy": "Oluşturan",
+      "paymentDate": "Ödeme Tarihi",
+      "paymentAmount": "Ödeme Tutarı",
+      "paymentMethod": "Ödeme Yöntemi",
+      "paymentReference": "Referans"
+    },
+    "filter": {
+      "search": "Fatura no veya müşteri ara...",
+      "status": "Durum",
+      "currency": "Para Birimi"
+    },
+    "payments": {
+      "add": "Ödeme Ekle",
+      "noPayments": "Henüz ödeme yok",
+      "total": "Toplam Ödenen",
+      "remaining": "Kalan",
+      "deleteConfirm": "Bu ödemeyi silmek istediğinizden emin misiniz?"
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "subtitle": "Sistem ayarları ve kullanıcı yönetimi",
+    "tabs": {
+      "users": "Kullanıcılar",
+      "audit": "Denetim Kaydı"
+    },
+    "users": {
+      "title": "Kullanıcılar",
+      "subtitle": "Sisteme erişimi olan kullanıcılar ve rolleri",
+      "add": "Kullanıcı Ekle",
+      "addTitle": "Yeni Kullanıcı",
+      "editTitle": "Kullanıcı Düzenle",
+      "info": "Kişisel Bilgiler",
+      "permissions": "Yetki & Durum",
+      "you": "sen",
+      "active": "Aktif",
+      "inactive": "Pasif",
+      "selfNote": "Kendi rolünüzü ve durumunuzu değiştiremezsiniz.",
+      "deleteConfirm": "adlı kullanıcıyı silmek istediğinizden emin misiniz?",
+      "changePassword": "Şifre Değiştir",
+      "passwordMinLength": "Şifre en az 6 karakter olmalıdır",
+      "passwordMismatch": "Şifreler eşleşmiyor",
+      "fields": {
+        "name": "Ad Soyad",
+        "email": "E-posta",
+        "password": "Şifre",
+        "newPassword": "Yeni Şifre",
+        "confirmPassword": "Şifre Tekrar",
+        "passwordHint": "Boş bırakırsanız şifre değişmez",
+        "role": "Rol",
+        "isActive": "Durum",
+        "activeLabel": "Hesap aktif"
+      }
+    },
+    "audit": {
+      "entityType": "Kayıt Tipi",
+      "action": "İşlem",
+      "date": "Tarih",
+      "user": "Kullanıcı",
+      "entityId": "Kayıt ID",
+      "ip": "IP Adresi",
+      "hostname": "Hostname",
+      "from": "Başlangıç",
+      "to": "Bitiş"
+    }
+  },
+  "ships": {
+    "title": "Gemiler",
+    "addTitle": "Yeni Gemi",
+    "editTitle": "Gemi Düzenle",
+    "deleteConfirm": "\"{{name}}\" gemisini silmek istediğinize emin misiniz?",
+    "sections": {
+      "basic": "Temel Bilgiler",
+      "technical": "Teknik Bilgiler",
+      "compliance": "Uyumluluk & Sistem"
+    },
+    "fields": {
+      "name": "Gemi Adı",
+      "imoNumber": "IMO Numarası",
+      "customer": "Müşteri",
+      "shipType": "Gemi Tipi",
+      "flag": "Bayrak",
+      "grossTonnage": "Gross Tonaj (GT)",
+      "dwt": "DWT",
+      "netTonnage": "Net Tonaj",
+      "builtYear": "Yapım Yılı",
+      "classificationSociety": "Sınıflandırma Kuruluşu",
+      "emissionVerifier": "Emisyon Doğrulayıcı",
+      "itSystem": "IT Sistemi",
+      "adminAuthority": "İdari Otorite",
+      "isLargeVessel": "> 5000 GT",
+      "status": "Durum",
+      "notes": "Notlar"
+    },
+    "filter": {
+      "search": "Gemi veya müşteri ara...",
+      "shipType": "Gemi Tipi",
+      "status": "Durum",
+      "flag": "Bayrak"
+    }
+  }
+}

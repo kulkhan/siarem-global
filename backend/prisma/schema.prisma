@@ -1,0 +1,553 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum ShipStatus {
+  ACTIVE
+  PASSIVE
+  SOLD
+  SCRAPPED
+}
+
+enum ServiceStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  REVISED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum EntityType {
+  CUSTOMER
+  SHIP
+  SERVICE
+  QUOTE
+  INVOICE
+  MEETING
+}
+
+// ─────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedServices  Service[]
+  createdMeetings   Meeting[]
+  uploadedDocs      Document[]
+  createdQuotes     Quote[]      @relation("QuoteCreator")
+  createdInvoices   Invoice[]
+  serviceLogs       ServiceLog[]
+  expenses          Expense[]    @relation("ExpenseCreatedBy")
+  createdCustomers  Customer[]          @relation("CustomerCreatedBy")
+  createdShips      Ship[]              @relation("ShipCreatedBy")
+  createdServices   Service[]           @relation("ServiceCreatedBy")
+  createdContacts   Contact[]           @relation("ContactCreatedBy")
+  auditLogs         AuditLog[]
+  assignedCustomers CustomerAssignee[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// CUSTOMERS
+// ─────────────────────────────────────────
+
+model Customer {
+  id          String    @id @default(cuid())
+  shortCode   String    @unique // e.g. ADTOR, KAEN, ARAS
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  country     String?
+  taxNumber   String?
+  notes       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  deletedById String?
+
+  contacts   Contact[]
+  ships      Ship[]
+  services   Service[]
+  quotes     Quote[]
+  invoices   Invoice[]
+  meetings   Meeting[]
+  documents  Document[]
+  expenses   Expense[]
+  createdBy  User?              @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  assignees  CustomerAssignee[]
+
+  @@map("customers")
+}
+
+model Contact {
+  id          String    @id @default(cuid())
+  customerId  String
+  name        String
+  title       String?
+  email       String?
+  phone       String?
+  isPrimary   Boolean   @default(false)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  deletedById String?
+
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation("ContactCreatedBy", fields: [createdById], references: [id])
+
+  @@map("contacts")
+}
+
+// ─────────────────────────────────────────
+// SHIP TYPES (IMO Categories)
+// ─────────────────────────────────────────
+
+model ShipType {
+  id      Int    @id @default(autoincrement())
+  name    String @unique
+  ciiType String // "DWT" or "GT"
+
+  ships Ship[]
+
+  @@map("ship_types")
+}
+
+// ─────────────────────────────────────────
+// SHIPS
+// ─────────────────────────────────────────
+
+model Ship {
+  id                    String     @id @default(cuid())
+  customerId            String
+  name                  String
+  imoNumber             String?    @unique
+  shipTypeId            Int?
+  flag                  String?
+  grossTonnage          Float?
+  dwt                   Float?
+  netTonnage            Float?
+  builtYear             Int?
+  classificationSociety String?    // DNV, BV, LR, ClassNK, etc.
+  emissionVerifier      String?    // Normec Verifavia, etc.
+  itSystem              String?    // GHG Genius, MRV DCS Voyage, etc.
+  adminAuthority        String?
+  isLargeVessel         Boolean    @default(true) // > 5000 GT
+  status                ShipStatus @default(ACTIVE)
+  notes                 String?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  createdById           String?
+  updatedById           String?
+  deletedAt             DateTime?
+  deletedById           String?
+
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  shipType   ShipType? @relation(fields: [shipTypeId], references: [id])
+  services   Service[]
+  quoteShips QuoteShip[]
+  meetings   Meeting[]
+  documents  Document[]
+  expenses   Expense[]
+  createdBy  User?     @relation("ShipCreatedBy", fields: [createdById], references: [id])
+
+  @@map("ships")
+}
+
+// ─────────────────────────────────────────
+// SERVICE TYPES
+// ─────────────────────────────────────────
+
+model ServiceType {
+  id          Int     @id @default(autoincrement())
+  nameEn      String
+  nameTr      String
+  code        String  @unique
+  category    String?
+  description String?
+
+  services Service[]
+
+  @@map("service_types")
+}
+
+// ─────────────────────────────────────────
+// SERVICES (actual work items per ship)
+// ─────────────────────────────────────────
+
+model Service {
+  id             String        @id @default(cuid())
+  customerId     String
+  shipId         String?
+  serviceTypeId  Int?
+  assignedUserId String?
+  status         ServiceStatus @default(OPEN)
+  priority       Priority      @default(MEDIUM)
+
+  // Maritime compliance MP statuses
+  euMrvMpStatus  String?
+  ukMrvMpStatus  String?
+  fuelEuMpStatus String?
+  imoDcsStatus   String?
+  euEtsStatus    String?
+  mohaStatus     String?
+
+  // Billing pipeline
+  invoiceReady     Boolean @default(false)
+  invoiceReadyNote String?
+
+  statusNote  String?
+  notes       String?
+  startDate   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdById String?
+  updatedById String?
+  deletedAt   DateTime?
+  deletedById String?
+
+  customer     Customer     @relation(fields: [customerId], references: [id])
+  ship         Ship?        @relation(fields: [shipId], references: [id])
+  serviceType  ServiceType? @relation(fields: [serviceTypeId], references: [id])
+  assignedUser User?        @relation(fields: [assignedUserId], references: [id])
+  createdBy    User?        @relation("ServiceCreatedBy", fields: [createdById], references: [id])
+  quotes       Quote[]
+  invoices     Invoice[]
+  documents    Document[]
+  logs         ServiceLog[]
+  expenses     Expense[]
+
+  @@map("services")
+}
+
+// ─────────────────────────────────────────
+// SERVICE LOGS (audit trail)
+// ─────────────────────────────────────────
+
+model ServiceLog {
+  id        String   @id @default(cuid())
+  serviceId String
+  userId    String?
+  action    String   // CREATED | STATUS_CHANGED | BILLING_READY | ASSIGNED | UPDATED
+  field     String?
+  oldValue  String?
+  newValue  String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@map("service_logs")
+}
+
+// ─────────────────────────────────────────
+// QUOTES (with revision history)
+// ─────────────────────────────────────────
+
+model Quote {
+  id            String      @id @default(cuid())
+  quoteNumber   String      @unique // NNNNN-ODDYSHIP-DDMMYYYY
+  revision      Int         @default(1)
+  parentQuoteId String?     // links to previous revision
+
+  customerId     String
+  serviceId      String?
+  createdById    String?
+  shipCount      Int         @default(1)
+  unitPrice      Float?
+  currency       String      @default("EUR")
+  totalAmount    Float?
+  priceEur       Float?
+  priceUsd       Float?
+  priceTry       Float?
+  quoteDate      DateTime
+  validUntil     DateTime?
+  status         QuoteStatus @default(DRAFT)
+  combinedInvoice Boolean    @default(false)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  updatedById    String?
+  deletedAt      DateTime?
+  deletedById    String?
+
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  service     Service?    @relation(fields: [serviceId], references: [id])
+  createdBy   User?       @relation("QuoteCreator", fields: [createdById], references: [id])
+  parentQuote Quote?      @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
+  revisions   Quote[]     @relation("QuoteRevisions")
+  quoteShips  QuoteShip[]
+  invoices    Invoice[]
+  documents   Document[]
+
+  @@map("quotes")
+}
+
+// Many-to-many: quotes ↔ ships
+model QuoteShip {
+  quoteId String
+  shipId  String
+  notes   String?
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  ship  Ship  @relation(fields: [shipId], references: [id])
+
+  @@id([quoteId, shipId])
+  @@map("quote_ships")
+}
+
+// ─────────────────────────────────────────
+// INVOICES
+// ─────────────────────────────────────────
+
+model Invoice {
+  id          String        @id @default(cuid())
+  refNo       String?       @unique // CS-XXXXX or ODA2025XXXXXXXXX
+  customerId  String
+  serviceId   String?
+  quoteId     String?
+  createdById String?
+  amount      Float
+  currency    String        @default("EUR")
+  status      InvoiceStatus @default(DRAFT)
+  isCombined  Boolean       @default(false)
+  invoiceDate DateTime
+  dueDate     DateTime?
+  sentAt      DateTime?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  updatedById String?
+  deletedAt   DateTime?
+  deletedById String?
+
+  customer  Customer  @relation(fields: [customerId], references: [id])
+  service   Service?  @relation(fields: [serviceId], references: [id])
+  quote     Quote?    @relation(fields: [quoteId], references: [id])
+  createdBy User?     @relation(fields: [createdById], references: [id])
+  payments  Payment[]
+  documents Document[]
+  expenses  Expense[]
+
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────
+
+model Payment {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  amount      Float
+  currency    String   @default("EUR")
+  paymentDate DateTime
+  method      String?
+  reference   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────
+// MEETINGS
+// ─────────────────────────────────────────
+
+model Meeting {
+  id           String    @id @default(cuid())
+  customerId   String
+  shipId       String?
+  createdById  String?
+  meetingType  String    @default("MEETING")  // MEETING | CALL
+  title        String
+  description  String?
+  location     String?
+  duration     Int?      // minutes (for CALL type)
+  meetingDate  DateTime
+  followUpDate DateTime?
+  attendees    String?   // JSON string of attendee list
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  updatedById  String?
+  deletedAt    DateTime?
+  deletedById  String?
+
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  ship      Ship?      @relation(fields: [shipId], references: [id])
+  createdBy User?      @relation(fields: [createdById], references: [id])
+  documents Document[]
+
+  @@map("meetings")
+}
+
+// ─────────────────────────────────────────
+// DOCUMENTS (polymorphic)
+// ─────────────────────────────────────────
+
+model Document {
+  id               String     @id @default(cuid())
+  entityType       EntityType
+  displayName      String     // user-friendly name
+  storedFilename   String     // {id}_{slug}.ext
+  originalFilename String
+  mimetype         String?
+  size             Int?
+  uploadedById     String?
+  createdAt        DateTime   @default(now())
+
+  uploadedBy User? @relation(fields: [uploadedById], references: [id])
+
+  // Polymorphic FK fields
+  customerId String?
+  shipId     String?
+  serviceId  String?
+  quoteId    String?
+  invoiceId  String?
+  meetingId  String?
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  ship     Ship?     @relation(fields: [shipId], references: [id])
+  service  Service?  @relation(fields: [serviceId], references: [id])
+  quote    Quote?    @relation(fields: [quoteId], references: [id])
+  invoice  Invoice?  @relation(fields: [invoiceId], references: [id])
+  meeting  Meeting?  @relation(fields: [meetingId], references: [id])
+
+  @@map("documents")
+}
+
+// ─────────────────────────────────────────
+// EXPENSES (Masraflar — Gelir & Gider)
+// ─────────────────────────────────────────
+
+model Expense {
+  id          String   @id @default(cuid())
+  type        String   // INCOME | EXPENSE
+  category    String?  // Personnel, Office, Travel, Service Cost, Other...
+  description String
+  amount      Float
+  currency    String   @default("TRY")
+  date        DateTime
+  customerId  String?
+  shipId      String?
+  serviceId   String?
+  invoiceId   String?
+  notes       String?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  updatedById String?
+  deletedAt   DateTime?
+  deletedById String?
+
+  customer  Customer? @relation(fields: [customerId], references: [id])
+  ship      Ship?     @relation(fields: [shipId], references: [id])
+  service   Service?  @relation(fields: [serviceId], references: [id])
+  invoice   Invoice?  @relation(fields: [invoiceId], references: [id])
+  createdBy User?     @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+
+  @@map("expenses")
+}
+
+// ─────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String               // "Customer", "Ship", "Service", etc.
+  entityId   String?
+  action     String               // CREATE | UPDATE | DELETE
+  userId     String?
+  userName   String?              // Snapshot — survives if user deleted
+  ipAddress  String?
+  hostname   String?
+  userAgent  String?
+  changes    Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────
+// CUSTOMER ASSIGNEES (Müşteri Temsilcileri)
+// ─────────────────────────────────────────
+
+model CustomerAssignee {
+  customerId String
+  userId     String
+  assignedAt DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, userId])
+  @@map("customer_assignees")
+}

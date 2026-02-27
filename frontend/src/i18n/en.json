@@ -1,0 +1,426 @@
+{
+  "auth": {
+    "title": "oddyCRM",
+    "subtitle": "Maritime CRM System",
+    "login": "Sign In",
+    "email": "Email",
+    "emailPlaceholder": "example@oddyship.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "submit": "Sign In",
+    "loggingIn": "Signing in...",
+    "invalidCredentials": "Invalid email or password",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email",
+    "passwordRequired": "Password is required"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "ships": "Ships",
+    "services": "Services",
+    "quotes": "Quotes",
+    "invoices": "Invoices",
+    "meetings": "Meetings",
+    "expenses": "Expenses",
+    "documents": "Documents",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "openServices": "Open Services",
+    "pendingQuotes": "Pending Quotes",
+    "monthInvoices": "This Month Invoices",
+    "overduePayments": "Overdue Payments",
+    "welcomeBack": "Welcome back",
+    "todayDate": "Today"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "noData": "No data found",
+    "actions": "Actions",
+    "logout": "Logout",
+    "profile": "Profile",
+    "back": "Back",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "deleteConfirm": "Are you sure you want to delete this record?",
+    "cannotDelete": "Cannot Delete",
+    "selectRow": "Select a row",
+    "page": "Page",
+    "total": "Total",
+    "reset": "Reset"
+  },
+  "status": {
+    "active": "Active",
+    "passive": "Passive",
+    "sold": "Sold",
+    "scrapped": "Scrapped",
+    "open": "Open",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "onHold": "On Hold",
+    "draft": "Draft",
+    "sent": "Sent",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "revised": "Revised",
+    "paid": "Paid",
+    "partiallyPaid": "Partially Paid",
+    "overdue": "Overdue"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "addTitle": "New Record",
+    "editTitle": "Edit Record",
+    "deleteConfirm": "Are you sure you want to delete this record?",
+    "type": {
+      "INCOME": "Income",
+      "EXPENSE": "Expense"
+    },
+    "sections": {
+      "basic": "Basic Information",
+      "links": "Links",
+      "notes": "Notes"
+    },
+    "fields": {
+      "type": "Type",
+      "category": "Category",
+      "description": "Description",
+      "amount": "Amount",
+      "currency": "Currency",
+      "date": "Date",
+      "customer": "Customer",
+      "ship": "Ship",
+      "service": "Service",
+      "notes": "Notes"
+    },
+    "filter": {
+      "search": "Search description or customer..."
+    },
+    "summary": {
+      "income": "Total Income",
+      "expense": "Total Expense",
+      "net": "Net Balance"
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "add": "Add Contact",
+    "edit": "Edit Contact",
+    "noContacts": "No contacts yet",
+    "fields": {
+      "name": "Full Name",
+      "title": "Title",
+      "email": "Email",
+      "phone": "Phone",
+      "isPrimary": "Primary contact",
+      "notes": "Notes"
+    }
+  },
+  "meetings": {
+    "title": "Meetings & Calls",
+    "addTitle": "New Record",
+    "editTitle": "Edit Record",
+    "deleteConfirm": "Are you sure you want to delete this record?",
+    "detail": "Detail",
+    "minutes": "min",
+    "type": {
+      "MEETING": "Meeting",
+      "CALL": "Phone Call"
+    },
+    "sections": {
+      "basic": "Basic Information",
+      "dateLocation": "Date & Location",
+      "details": "Details"
+    },
+    "fields": {
+      "type": "Type",
+      "customer": "Customer",
+      "ship": "Ship",
+      "title": "Title",
+      "description": "Description",
+      "location": "Location",
+      "duration": "Duration (minutes)",
+      "date": "Date",
+      "followUpDate": "Follow-up Date",
+      "attendees": "Attendees",
+      "notes": "Notes",
+      "createdBy": "Created By"
+    },
+    "filter": {
+      "search": "Search title or customer..."
+    }
+  },
+  "customers": {
+    "title": "Customers",
+    "addTitle": "New Customer",
+    "editTitle": "Edit Customer",
+    "detail": "Customer Detail",
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"?",
+    "sections": {
+      "basic": "Basic Information",
+      "contact": "Contact & Address",
+      "ships": "Linked Ships"
+    },
+    "fields": {
+      "shortCode": "Short Code",
+      "shortCodeHint": "Unique identifier (e.g. ADTOR)",
+      "name": "Company Name",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "country": "Country",
+      "taxNumber": "Tax Number",
+      "notes": "Notes",
+      "shipCount": "Ships",
+      "status": "Status"
+    },
+    "filter": {
+      "search": "Search customers...",
+      "country": "Country",
+      "status": "Status"
+    },
+    "assignees": {
+      "title": "Account Managers",
+      "select": "Select a user...",
+      "none": "No account managers assigned",
+      "remove": "Remove assignee"
+    }
+  },
+  "services": {
+    "title": "Services",
+    "addTitle": "New Service",
+    "editTitle": "Edit Service",
+    "deleteConfirm": "Are you sure you want to delete this service?",
+    "sections": {
+      "basic": "Basic Information",
+      "statusDetails": "Status & Priority",
+      "compliance": "Compliance Statuses",
+      "notes": "Notes"
+    },
+    "fields": {
+      "customer": "Customer",
+      "ship": "Ship",
+      "serviceType": "Service Type",
+      "assignedUser": "Assigned To",
+      "status": "Status",
+      "priority": "Priority",
+      "startDate": "Start Date",
+      "completedAt": "Completed At",
+      "statusNote": "Status Note",
+      "notes": "Notes",
+      "euMrvMpStatus": "EU MRV MP",
+      "ukMrvMpStatus": "UK MRV MP",
+      "fuelEuMpStatus": "Fuel EU MP",
+      "imoDcsStatus": "IMO DCS",
+      "euEtsStatus": "EU ETS",
+      "mohaStatus": "MOHA"
+    },
+    "filter": {
+      "search": "Search customer or ship...",
+      "serviceType": "Service Type",
+      "status": "Status",
+      "priority": "Priority"
+    },
+    "priority": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    },
+    "billing": {
+      "title": "Billing Process",
+      "ready": "Ready to Invoice",
+      "draft": "Draft Invoice",
+      "sent": "Invoice Sent",
+      "paid": "Invoice Paid",
+      "invoiceReadyNote": "Note",
+      "noInvoice": "No invoice"
+    },
+    "history": {
+      "title": "Activity History",
+      "noHistory": "No history yet",
+      "CREATED": "Created",
+      "STATUS_CHANGED": "Status changed",
+      "BILLING_READY": "Marked ready to invoice",
+      "ASSIGNED": "Assignment changed",
+      "UPDATED": "Updated"
+    },
+    "detail": "Service Detail",
+    "fields_invoiceReady": "Ready to Invoice"
+  },
+  "quotes": {
+    "title": "Quotes",
+    "addTitle": "New Quote",
+    "editTitle": "Edit Quote",
+    "deleteConfirm": "Are you sure you want to delete this quote?",
+    "detail": "Quote Detail",
+    "sections": {
+      "basic": "Basic Information",
+      "pricing": "Pricing",
+      "dates": "Dates",
+      "invoices": "Invoices",
+      "notes": "Notes"
+    },
+    "fields": {
+      "quoteNumber": "Quote No",
+      "customer": "Customer",
+      "service": "Service",
+      "status": "Status",
+      "quoteDate": "Quote Date",
+      "validUntil": "Valid Until",
+      "priceEur": "Price (EUR)",
+      "priceUsd": "Price (USD)",
+      "priceTry": "Price (TRY)",
+      "shipCount": "Ship Count",
+      "combinedInvoice": "Combined Invoice",
+      "notes": "Notes",
+      "createdBy": "Created By"
+    },
+    "filter": {
+      "search": "Search by quote no or customer...",
+      "status": "Status"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "addTitle": "New Invoice",
+    "editTitle": "Edit Invoice",
+    "deleteConfirm": "Are you sure you want to delete this invoice?",
+    "detail": "Invoice Detail",
+    "sections": {
+      "basic": "Basic Information",
+      "amount": "Amount & Status",
+      "dates": "Dates",
+      "payments": "Payments",
+      "notes": "Notes"
+    },
+    "fields": {
+      "refNo": "Invoice No",
+      "customer": "Customer",
+      "service": "Service",
+      "amount": "Amount",
+      "currency": "Currency",
+      "status": "Status",
+      "invoiceDate": "Invoice Date",
+      "dueDate": "Due Date",
+      "sentAt": "Sent Date",
+      "isCombined": "Combined Invoice",
+      "notes": "Notes",
+      "createdBy": "Created By",
+      "paymentDate": "Payment Date",
+      "paymentAmount": "Payment Amount",
+      "paymentMethod": "Payment Method",
+      "paymentReference": "Reference"
+    },
+    "filter": {
+      "search": "Search by invoice no or customer...",
+      "status": "Status",
+      "currency": "Currency"
+    },
+    "payments": {
+      "add": "Add Payment",
+      "noPayments": "No payments yet",
+      "total": "Total Paid",
+      "remaining": "Remaining",
+      "deleteConfirm": "Are you sure you want to delete this payment?"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "System settings and user management",
+    "tabs": {
+      "users": "Users",
+      "audit": "Audit Log"
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Users with access to the system and their roles",
+      "add": "Add User",
+      "addTitle": "New User",
+      "editTitle": "Edit User",
+      "info": "Personal Information",
+      "permissions": "Role & Status",
+      "you": "you",
+      "active": "Active",
+      "inactive": "Inactive",
+      "selfNote": "You cannot change your own role or status.",
+      "deleteConfirm": "Are you sure you want to delete this user?",
+      "changePassword": "Change Password",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "passwordMismatch": "Passwords do not match",
+      "fields": {
+        "name": "Full Name",
+        "email": "Email",
+        "password": "Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm Password",
+        "passwordHint": "Leave blank to keep current password",
+        "role": "Role",
+        "isActive": "Status",
+        "activeLabel": "Account active"
+      }
+    },
+    "audit": {
+      "entityType": "Entity Type",
+      "action": "Action",
+      "date": "Date",
+      "user": "User",
+      "entityId": "Entity ID",
+      "ip": "IP Address",
+      "hostname": "Hostname",
+      "from": "From",
+      "to": "To"
+    }
+  },
+  "ships": {
+    "title": "Ships",
+    "addTitle": "New Ship",
+    "editTitle": "Edit Ship",
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"?",
+    "sections": {
+      "basic": "Basic Information",
+      "technical": "Technical Details",
+      "compliance": "Compliance & Systems"
+    },
+    "fields": {
+      "name": "Ship Name",
+      "imoNumber": "IMO Number",
+      "customer": "Customer",
+      "shipType": "Ship Type",
+      "flag": "Flag",
+      "grossTonnage": "Gross Tonnage (GT)",
+      "dwt": "DWT",
+      "netTonnage": "Net Tonnage",
+      "builtYear": "Built Year",
+      "classificationSociety": "Classification Society",
+      "emissionVerifier": "Emission Verifier",
+      "itSystem": "IT System",
+      "adminAuthority": "Admin Authority",
+      "isLargeVessel": "> 5000 GT",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "filter": {
+      "search": "Search ships or customer...",
+      "shipType": "Ship Type",
+      "status": "Status",
+      "flag": "Flag"
+    }
+  }
+}

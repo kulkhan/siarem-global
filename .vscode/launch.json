@@ -1,0 +1,78 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ─── Backend ──────────────────────────────────────────────────────────────
+
+    // Breakpoint + watch: önce terminalde "npm run dev:debug" çalıştır,
+    // ardından bu config ile bağlan.
+    {
+      "name": "Backend: Attach (dev:debug çalışırken)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/backend/src/**",
+        "!**/node_modules/**"
+      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "localRoot": "${workspaceFolder}/backend",
+      "remoteRoot": "${workspaceFolder}/backend"
+    },
+
+    // VS Code'dan direkt başlatır (watch yok, tek seferlik debug).
+    {
+      "name": "Backend: Launch (tsx, no watch)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/backend/node_modules/.bin/tsx",
+      "program": "${workspaceFolder}/backend/src/server.ts",
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/backend/src/**",
+        "!**/node_modules/**"
+      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+
+    // ─── Frontend ─────────────────────────────────────────────────────────────
+
+    // Önce "npm run dev" ile Vite başlatılmış olmalı.
+    {
+      "name": "Frontend: Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMapPathOverrides": {
+        "/@fs/*": "${workspaceFolder}/frontend/src/*",
+        "/src/*": "${workspaceFolder}/frontend/src/*"
+      },
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Frontend: Edge",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMapPathOverrides": {
+        "/@fs/*": "${workspaceFolder}/frontend/src/*",
+        "/src/*": "${workspaceFolder}/frontend/src/*"
+      },
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Backend (attach) + Chrome",
+      "configurations": ["Backend: Attach (dev:debug çalışırken)", "Frontend: Chrome"],
+      "stopAll": true,
+      "presentation": { "order": 1 }
+    }
+  ]
+}
