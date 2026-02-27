@@ -18,12 +18,15 @@ export interface InvoiceQuery {
 
 const SORT_WHITELIST = ['invoiceDate', 'dueDate', 'amount', 'createdAt', 'status'];
 
-export async function getInvoices(q: InvoiceQuery) {
+export async function getInvoices(q: InvoiceQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, serviceId, status, currency, dateFrom, dateTo, sortOrder = 'desc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'invoiceDate';
 
+  const tenantFilter = companyId ? { companyId } : {};
+
   const where = {
     deletedAt: null,
+    ...tenantFilter,
     ...(search
       ? {
           OR: [
@@ -72,9 +75,20 @@ export async function getInvoices(q: InvoiceQuery) {
   return { data, total, page, pageSize };
 }
 
-export async function getInvoiceById(id: string) {
+export interface InvoiceItemInput {
+  productId?: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  currency: string;
+  total: number;
+  sortOrder?: number;
+}
+
+export async function getInvoiceById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const inv = await prisma.invoice.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...tenantFilter },
     include: {
       customer: { select: { id: true, name: true, shortCode: true } },
       service: {
@@ -87,6 +101,7 @@ export async function getInvoiceById(id: string) {
       quote: { select: { id: true, quoteNumber: true } },
       createdBy: { select: { id: true, name: true } },
       payments: { orderBy: { paymentDate: 'asc' } },
+      items: { include: { product: true }, orderBy: { sortOrder: 'asc' } },
     },
   });
   if (!inv) throw new AppError('Invoice not found', 404);
@@ -107,15 +122,39 @@ export async function createInvoice(data: {
   sentAt?: string;
   notes?: string;
   createdById?: string;
-}) {
-  const { invoiceDate, dueDate, sentAt, ...rest } = data;
-  return prisma.invoice.create({
-    data: {
-      ...rest,
-      invoiceDate: new Date(invoiceDate),
-      ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
-      ...(sentAt ? { sentAt: new Date(sentAt) } : {}),
-    },
+  items?: InvoiceItemInput[];
+}, companyId?: string) {
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
+  const { invoiceDate, dueDate, sentAt, items, ...rest } = data;
+
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.invoice.create({
+      data: {
+        ...rest,
+        companyId,
+        invoiceDate: new Date(invoiceDate),
+        ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
+        ...(sentAt ? { sentAt: new Date(sentAt) } : {}),
+      },
+    });
+
+    if (items && items.length > 0) {
+      await tx.invoiceItem.createMany({
+        data: items.map((item, i) => ({
+          id: require('crypto').randomUUID(),
+          invoiceId: inv.id,
+          productId: item.productId ?? null,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          currency: item.currency,
+          total: item.total,
+          sortOrder: item.sortOrder ?? i,
+        })),
+      });
+    }
+
+    return inv;
   });
 }
 
@@ -134,27 +173,55 @@ export async function updateInvoice(
     dueDate?: string | null;
     sentAt?: string | null;
     notes?: string;
+    items?: InvoiceItemInput[];
   },
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
-  const existing = await prisma.invoice.findFirst({ where: { id, deletedAt: null } });
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.invoice.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!existing) throw new AppError('Invoice not found', 404);
 
-  const { invoiceDate, dueDate, sentAt, ...rest } = data;
-  return prisma.invoice.update({
-    where: { id },
-    data: {
-      ...rest,
-      updatedById: userId,
-      ...(invoiceDate ? { invoiceDate: new Date(invoiceDate) } : {}),
-      ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
-      ...(sentAt !== undefined ? { sentAt: sentAt ? new Date(sentAt) : null } : {}),
-    },
+  const { invoiceDate, dueDate, sentAt, items, ...rest } = data;
+
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.invoice.update({
+      where: { id },
+      data: {
+        ...rest,
+        updatedById: userId,
+        ...(invoiceDate ? { invoiceDate: new Date(invoiceDate) } : {}),
+        ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
+        ...(sentAt !== undefined ? { sentAt: sentAt ? new Date(sentAt) : null } : {}),
+      },
+    });
+
+    if (items !== undefined) {
+      await tx.invoiceItem.deleteMany({ where: { invoiceId: id } });
+      if (items.length > 0) {
+        await tx.invoiceItem.createMany({
+          data: items.map((item, i) => ({
+            id: require('crypto').randomUUID(),
+            invoiceId: id,
+            productId: item.productId ?? null,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            currency: item.currency,
+            total: item.total,
+            sortOrder: item.sortOrder ?? i,
+          })),
+        });
+      }
+    }
+
+    return inv;
   });
 }
 
-export async function deleteInvoice(id: string, userId?: string) {
-  const inv = await prisma.invoice.findFirst({ where: { id, deletedAt: null } });
+export async function deleteInvoice(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const inv = await prisma.invoice.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!inv) throw new AppError('Invoice not found', 404);
   return prisma.invoice.update({
     where: { id },
@@ -228,5 +295,70 @@ export async function deletePayment(paymentId: string) {
     if (newStatus !== inv.status) {
       await tx.invoice.update({ where: { id: inv.id }, data: { status: newStatus } });
     }
+  });
+}
+
+// ─── Convert quote to draft invoice ─────────────────────────────────────────
+
+export async function createInvoiceFromQuote(
+  quoteId: string,
+  companyId: string | null,
+  userId?: string,
+) {
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
+
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, companyId, deletedAt: null },
+    include: {
+      items: { orderBy: { sortOrder: 'asc' } },
+    },
+  });
+  if (!quote) throw new AppError('Teklif bulunamadı', 404);
+
+  // Determine invoice currency: prefer EUR → USD → TRY from items, else quote currency or EUR
+  const itemCurrencies = [...new Set(quote.items.map((i) => i.currency))];
+  const invoiceCurrency = itemCurrencies.length === 1
+    ? itemCurrencies[0]
+    : (quote.priceEur != null ? 'EUR' : quote.priceUsd != null ? 'USD' : quote.priceTry != null ? 'TRY' : 'EUR');
+
+  // Amount = sum of items matching invoice currency (or 0 if mixed / no items)
+  const amount = quote.items
+    .filter((i) => i.currency === invoiceCurrency)
+    .reduce((sum, i) => sum + Number(i.total), 0);
+
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.invoice.create({
+      data: {
+        companyId,
+        customerId: quote.customerId,
+        serviceId: quote.serviceId ?? undefined,
+        quoteId: quote.id,
+        createdById: userId,
+        amount,
+        currency: invoiceCurrency,
+        status: 'DRAFT',
+        isCombined: quote.combinedInvoice,
+        invoiceDate: new Date(),
+        notes: quote.notes ?? undefined,
+      },
+    });
+
+    if (quote.items.length > 0) {
+      await tx.invoiceItem.createMany({
+        data: quote.items.map((item, i) => ({
+          id: require('crypto').randomUUID(),
+          invoiceId: inv.id,
+          productId: item.productId ?? null,
+          description: item.description,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          currency: item.currency,
+          total: Number(item.total),
+          sortOrder: item.sortOrder ?? i,
+        })),
+      });
+    }
+
+    return inv;
   });
 }

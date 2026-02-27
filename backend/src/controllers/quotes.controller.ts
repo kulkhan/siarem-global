@@ -5,6 +5,7 @@ import { logAudit } from '../services/audit.service';
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
+    const companyId = req.user?.companyId ?? null;
     const { page = '1', pageSize = '20', search, customerId, serviceId, status, sortBy, sortOrder } =
       req.query as Record<string, string>;
 
@@ -17,7 +18,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       status: status as QuoteStatus | undefined,
       sortBy,
       sortOrder: sortOrder as 'asc' | 'desc' | undefined,
-    });
+    }, companyId);
     res.json({ success: true, ...result });
   } catch (err) {
     next(err);
@@ -26,7 +27,8 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function getOne(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await svc.getQuoteById(req.params.id);
+    const companyId = req.user?.companyId ?? null;
+    const data = await svc.getQuoteById(req.params.id, companyId);
     res.json({ success: true, data });
   } catch (err) {
     next(err);
@@ -36,7 +38,8 @@ export async function getOne(req: Request, res: Response, next: NextFunction) {
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
-    const data = await svc.createQuote({ ...req.body, createdById: userId });
+    const companyId = req.user?.companyId ?? undefined;
+    const data = await svc.createQuote({ ...req.body, createdById: userId }, companyId);
     await logAudit(req, 'Quote', 'CREATE', data.id);
     res.status(201).json({ success: true, data });
   } catch (err) {
@@ -47,7 +50,8 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
-    const data = await svc.updateQuote(req.params.id, req.body, userId);
+    const companyId = req.user?.companyId ?? null;
+    const data = await svc.updateQuote(req.params.id, req.body, userId, companyId);
     await logAudit(req, 'Quote', 'UPDATE', req.params.id);
     res.json({ success: true, data });
   } catch (err) {
@@ -58,7 +62,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
-    await svc.deleteQuote(req.params.id, userId);
+    const companyId = req.user?.companyId ?? null;
+    await svc.deleteQuote(req.params.id, userId, companyId);
     await logAudit(req, 'Quote', 'DELETE', req.params.id);
     res.json({ success: true });
   } catch (err) {

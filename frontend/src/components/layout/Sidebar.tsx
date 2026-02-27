@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Building2, Ship, Wrench, FileText,
   Receipt, CalendarDays, FolderOpen, BarChart3, Settings,
-  LogOut, Anchor, ChevronLeft, ChevronRight, Wallet,
+  LogOut, Anchor, ChevronLeft, ChevronRight, Wallet, Globe, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -16,11 +16,12 @@ interface SidebarProps {
 const navItems = [
   { key: 'dashboard', path: '/dashboard', icon: LayoutDashboard },
   { key: 'customers', path: '/customers', icon: Building2 },
-  { key: 'ships', path: '/ships', icon: Ship },
-  { key: 'services', path: '/services', icon: Wrench },
   { key: 'quotes', path: '/quotes', icon: FileText },
+  /*{ key: 'ships', path: '/ships', icon: Ship },*/
+  { key: 'services', path: '/services', icon: Wrench },
   { key: 'invoices', path: '/invoices', icon: Receipt },
   { key: 'meetings', path: '/meetings', icon: CalendarDays },
+  { key: 'complaints', path: '/complaints', icon: MessageSquare },
   { key: 'expenses', path: '/expenses', icon: Wallet, adminOnly: true },
   { key: 'documents', path: '/documents', icon: FolderOpen },
   { key: 'reports', path: '/reports', icon: BarChart3 },
@@ -30,7 +31,8 @@ const navItems = [
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { t } = useTranslation();
   const { user, clearAuth } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
@@ -78,6 +80,36 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </li>
           ))}
         </ul>
+
+        {/* Platform Management — SUPER_ADMIN only */}
+        {isSuperAdmin && (
+          <div className="mt-4 px-2">
+            {!collapsed && (
+              <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/30">
+                Platform
+              </p>
+            )}
+            <ul className="space-y-0.5 mt-1">
+              <li>
+                <NavLink
+                  to="/admin/companies"
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                      'text-sidebar-foreground/70 hover:bg-white/10 hover:text-white',
+                      isActive && 'bg-sidebar-active text-sidebar-active-foreground hover:bg-sidebar-active',
+                      collapsed && 'justify-center px-2'
+                    )
+                  }
+                  title={collapsed ? 'Şirketler' : undefined}
+                >
+                  <Globe className="w-5 h-5 shrink-0" />
+                  {!collapsed && <span className="truncate">Şirketler</span>}
+                </NavLink>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
 
       {/* User section */}
@@ -86,6 +118,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <div className="px-3 py-2 mb-1">
             <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
             <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
+            {isSuperAdmin && (
+              <p className="text-xs text-blue-400 truncate">Super Admin</p>
+            )}
           </div>
         )}
         <button

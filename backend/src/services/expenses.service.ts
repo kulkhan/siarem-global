@@ -28,14 +28,15 @@ const include = {
   createdBy: { select: { id: true, name: true } },
 };
 
-export async function getExpenses(q: ExpenseQuery) {
+export async function getExpenses(q: ExpenseQuery, companyId: string | null) {
   const page = q.page ?? 1;
   const pageSize = q.pageSize ?? 20;
   const skip = (page - 1) * pageSize;
   const sortBy = q.sortBy ?? 'date';
   const sortOrder = q.sortOrder ?? 'desc';
 
-  const where: Record<string, unknown> = { deletedAt: null };
+  const tenantFilter = companyId ? { companyId } : {};
+  const where: Record<string, unknown> = { deletedAt: null, ...tenantFilter };
   if (q.type) where.type = q.type;
   if (q.category) where.category = q.category;
   if (q.currency) where.currency = q.currency;
@@ -74,8 +75,9 @@ export async function getExpenses(q: ExpenseQuery) {
   return { data, total, page, pageSize, incomeTotal, expenseTotal, net: incomeTotal - expenseTotal };
 }
 
-export async function getExpenseById(id: string) {
-  return prisma.expense.findFirstOrThrow({ where: { id, deletedAt: null }, include });
+export async function getExpenseById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  return prisma.expense.findFirstOrThrow({ where: { id, deletedAt: null, ...tenantFilter }, include });
 }
 
 export async function createExpense(data: {
@@ -91,9 +93,10 @@ export async function createExpense(data: {
   invoiceId?: string;
   notes?: string;
   createdById?: string;
-}) {
+}, companyId?: string) {
   return prisma.expense.create({
     data: {
+      companyId: companyId!,
       type: data.type,
       category: data.category || undefined,
       description: data.description,
@@ -126,8 +129,11 @@ export async function updateExpense(
     invoiceId: string | null;
     notes: string | null;
   }>,
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
+  const tenantFilter = companyId ? { companyId } : {};
+  await prisma.expense.findFirstOrThrow({ where: { id, deletedAt: null, ...tenantFilter } });
   return prisma.expense.update({
     where: { id },
     data: {
@@ -139,15 +145,23 @@ export async function updateExpense(
   });
 }
 
-export async function deleteExpense(id: string, userId?: string) {
+export async function deleteExpense(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  await prisma.expense.findFirstOrThrow({ where: { id, deletedAt: null, ...tenantFilter } });
   return prisma.expense.update({
     where: { id },
     data: { deletedAt: new Date(), deletedById: userId },
   });
 }
 
-export async function getExpenseSummary(params: { customerId?: string; shipId?: string; serviceId?: string }) {
-  const where: Record<string, unknown> = { deletedAt: null };
+export async function getExpenseSummary(params: {
+  customerId?: string;
+  shipId?: string;
+  serviceId?: string;
+  companyId?: string | null;
+}) {
+  const tenantFilter = params.companyId ? { companyId: params.companyId } : {};
+  const where: Record<string, unknown> = { deletedAt: null, ...tenantFilter };
   if (params.customerId) where.customerId = params.customerId;
   if (params.shipId) where.shipId = params.shipId;
   if (params.serviceId) where.serviceId = params.serviceId;

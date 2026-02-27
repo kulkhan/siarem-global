@@ -13,12 +13,15 @@ export interface CustomerQuery {
 
 const SORT_WHITELIST = ['name', 'shortCode', 'country', 'createdAt', 'shipCount'];
 
-export async function getCustomers(q: CustomerQuery) {
+export async function getCustomers(q: CustomerQuery, companyId: string | null) {
   const { page, pageSize, search, country, isActive, sortOrder = 'asc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'name';
 
+  const tenantFilter = companyId ? { companyId } : {};
+
   const where = {
     deletedAt: null,
+    ...tenantFilter,
     ...(search
       ? {
           OR: [
@@ -52,9 +55,10 @@ export async function getCustomers(q: CustomerQuery) {
   return { data, total, page, pageSize };
 }
 
-export async function getCustomerById(id: string) {
+export async function getCustomerById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const c = await prisma.customer.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...tenantFilter },
     include: {
       _count: { select: { ships: true, services: true, invoices: true } },
       contacts: { where: { deletedAt: null }, orderBy: { isPrimary: 'desc' } },
@@ -79,11 +83,15 @@ export async function createCustomer(
     taxNumber?: string;
     notes?: string;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string
 ) {
-  const existing = await prisma.customer.findUnique({ where: { shortCode: data.shortCode } });
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
+  const existing = await prisma.customer.findFirst({
+    where: { shortCode: data.shortCode, companyId, deletedAt: null },
+  });
   if (existing) throw new AppError('Short code already in use', 400);
-  return prisma.customer.create({ data: { ...data, createdById: userId } });
+  return prisma.customer.create({ data: { ...data, companyId, createdById: userId } });
 }
 
 export async function updateCustomer(
@@ -98,18 +106,21 @@ export async function updateCustomer(
     notes?: string;
     isActive?: boolean;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
-  const c = await prisma.customer.findFirst({ where: { id, deletedAt: null } });
+  const tenantFilter = companyId ? { companyId } : {};
+  const c = await prisma.customer.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!c) throw new AppError('Customer not found', 404);
   return prisma.customer.update({ where: { id }, data: { ...data, updatedById: userId } });
 }
 
-export async function deleteCustomer(id: string, userId?: string) {
+export async function deleteCustomer(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const shipCount = await prisma.ship.count({ where: { customerId: id, deletedAt: null } });
   if (shipCount > 0)
     throw new AppError(`Bu müşteriye ait ${shipCount} gemi bulunuyor. Önce gemileri silin.`, 400);
-  const c = await prisma.customer.findFirst({ where: { id, deletedAt: null } });
+  const c = await prisma.customer.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!c) throw new AppError('Customer not found', 404);
   return prisma.customer.update({
     where: { id },
@@ -117,9 +128,10 @@ export async function deleteCustomer(id: string, userId?: string) {
   });
 }
 
-export async function getCountryOptions() {
+export async function getCountryOptions(companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const rows = await prisma.customer.findMany({
-    where: { country: { not: null }, deletedAt: null },
+    where: { country: { not: null }, deletedAt: null, ...tenantFilter },
     select: { country: true },
     distinct: ['country'],
     orderBy: { country: 'asc' },

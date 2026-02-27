@@ -4,6 +4,7 @@ import { logAudit } from '../services/audit.service';
 
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    const companyId = req.user?.companyId ?? null;
     const page = Math.max(1, parseInt(String(req.query.page ?? '1')));
     const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize ?? '20'))));
     const result = await getMeetings({
@@ -15,14 +16,15 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
       dateTo: String(req.query.dateTo ?? '').trim() || undefined,
       sortBy: String(req.query.sortBy ?? 'meetingDate'),
       sortOrder: req.query.sortOrder === 'asc' ? 'asc' : 'desc',
-    });
+    }, companyId);
     res.json({ success: true, ...result });
   } catch (err) { next(err); }
 }
 
 export async function getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const data = await getMeetingById(req.params.id);
+    const companyId = req.user?.companyId ?? null;
+    const data = await getMeetingById(req.params.id, companyId);
     res.json({ success: true, data });
   } catch (err) { next(err); }
 }
@@ -30,7 +32,8 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    const data = await createMeeting(req.body, userId);
+    const companyId = req.user?.companyId ?? undefined;
+    const data = await createMeeting(req.body, userId, companyId);
     await logAudit(req, 'Meeting', 'CREATE', data.id);
     res.status(201).json({ success: true, data });
   } catch (err) { next(err); }
@@ -39,7 +42,8 @@ export async function create(req: Request, res: Response, next: NextFunction): P
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    const data = await updateMeeting(req.params.id, req.body, userId);
+    const companyId = req.user?.companyId ?? null;
+    const data = await updateMeeting(req.params.id, req.body, userId, companyId);
     await logAudit(req, 'Meeting', 'UPDATE', req.params.id);
     res.json({ success: true, data });
   } catch (err) { next(err); }
@@ -48,7 +52,8 @@ export async function update(req: Request, res: Response, next: NextFunction): P
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    await deleteMeeting(req.params.id, userId);
+    const companyId = req.user?.companyId ?? null;
+    await deleteMeeting(req.params.id, userId, companyId);
     await logAudit(req, 'Meeting', 'DELETE', req.params.id);
     res.json({ success: true, message: 'Deleted' });
   } catch (err) { next(err); }

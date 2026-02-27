@@ -1,9 +1,11 @@
 import { prisma } from '../lib/prisma';
 
-export async function getDashboardStats() {
+export async function getDashboardStats(companyId: string | null) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const tenantFilter = companyId ? { companyId } : {};
 
   const [
     serviceStats,
@@ -16,52 +18,51 @@ export async function getDashboardStats() {
     servicesByPriority,
     quotesByMonth,
   ] = await Promise.all([
-    // Service counts by status
     prisma.service.groupBy({
       by: ['status'],
+      where: { ...tenantFilter, deletedAt: null },
       _count: { id: true },
     }),
 
-    // Quote counts by status
     prisma.quote.groupBy({
       by: ['status'],
+      where: { ...tenantFilter, deletedAt: null },
       _count: { id: true },
     }),
 
-    // Invoice: this month count + total
     prisma.invoice.aggregate({
-      where: { invoiceDate: { gte: startOfMonth, lte: endOfMonth } },
+      where: { ...tenantFilter, deletedAt: null, invoiceDate: { gte: startOfMonth, lte: endOfMonth } },
       _count: { id: true },
       _sum: { amount: true },
     }),
 
-    // Invoices grouped by status (count + sum)
     prisma.invoice.groupBy({
       by: ['status'],
+      where: { ...tenantFilter, deletedAt: null },
       _count: { id: true },
       _sum: { amount: true },
     }),
 
-    // Overdue invoices (dueDate < now AND status not PAID/CANCELLED)
     prisma.invoice.count({
       where: {
+        ...tenantFilter,
+        deletedAt: null,
         dueDate: { lt: now },
         status: { notIn: ['PAID', 'CANCELLED'] },
       },
     }),
 
-    // Top 5 customers by invoice total
     prisma.invoice.groupBy({
       by: ['customerId'],
+      where: { ...tenantFilter, deletedAt: null, status: { notIn: ['CANCELLED'] } },
       _count: { id: true },
       _sum: { amount: true },
       orderBy: { _sum: { amount: 'desc' } },
       take: 5,
-      where: { status: { notIn: ['CANCELLED'] } },
     }),
 
-    // Recent 5 meetings
     prisma.meeting.findMany({
+      where: { ...tenantFilter, deletedAt: null },
       take: 5,
       orderBy: { meetingDate: 'desc' },
       include: {
@@ -69,28 +70,38 @@ export async function getDashboardStats() {
       },
     }),
 
-    // Services by priority
     prisma.service.groupBy({
       by: ['priority'],
+      where: { ...tenantFilter, deletedAt: null, status: { notIn: ['COMPLETED', 'CANCELLED'] } },
       _count: { id: true },
-      where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
     }),
 
-    // Quotes by month (last 6 months)
-    prisma.$queryRaw<{ month: string; approved: bigint; rejected: bigint; total: bigint }[]>`
-      SELECT
-        TO_CHAR(DATE_TRUNC('month', "quoteDate"), 'YYYY-MM') as month,
-        COUNT(*) FILTER (WHERE status = 'APPROVED') as approved,
-        COUNT(*) FILTER (WHERE status = 'REJECTED') as rejected,
-        COUNT(*) as total
-      FROM quotes
-      WHERE "quoteDate" >= NOW() - INTERVAL '6 months'
-      GROUP BY DATE_TRUNC('month', "quoteDate")
-      ORDER BY DATE_TRUNC('month', "quoteDate") ASC
-    `,
+    companyId
+      ? prisma.$queryRaw<{ month: string; approved: bigint; rejected: bigint; total: bigint }[]>`
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', "quoteDate"), 'YYYY-MM') as month,
+            COUNT(*) FILTER (WHERE status = 'APPROVED') as approved,
+            COUNT(*) FILTER (WHERE status = 'REJECTED') as rejected,
+            COUNT(*) as total
+          FROM quotes
+          WHERE "quoteDate" >= NOW() - INTERVAL '6 months'
+            AND "company_id" = ${companyId}
+          GROUP BY DATE_TRUNC('month', "quoteDate")
+          ORDER BY DATE_TRUNC('month', "quoteDate") ASC
+        `
+      : prisma.$queryRaw<{ month: string; approved: bigint; rejected: bigint; total: bigint }[]>`
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', "quoteDate"), 'YYYY-MM') as month,
+            COUNT(*) FILTER (WHERE status = 'APPROVED') as approved,
+            COUNT(*) FILTER (WHERE status = 'REJECTED') as rejected,
+            COUNT(*) as total
+          FROM quotes
+          WHERE "quoteDate" >= NOW() - INTERVAL '6 months'
+          GROUP BY DATE_TRUNC('month', "quoteDate")
+          ORDER BY DATE_TRUNC('month', "quoteDate") ASC
+        `,
   ]);
 
-  // Resolve customer names for topCustomers
   const customerIds = topCustomers.map((c) => c.customerId);
   const customers = await prisma.customer.findMany({
     where: { id: { in: customerIds } },
@@ -98,13 +109,8 @@ export async function getDashboardStats() {
   });
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
 
-  // Build service stats map
-  const serviceMap = Object.fromEntries(
-    serviceStats.map((s) => [s.status, s._count.id])
-  );
-  const quoteMap = Object.fromEntries(
-    quoteStats.map((q) => [q.status, q._count.id])
-  );
+  const serviceMap = Object.fromEntries(serviceStats.map((s) => [s.status, s._count.id]));
+  const quoteMap = Object.fromEntries(quoteStats.map((q) => [q.status, q._count.id]));
 
   return {
     services: {

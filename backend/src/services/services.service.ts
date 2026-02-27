@@ -18,12 +18,15 @@ export interface ServiceQuery {
 
 const SORT_WHITELIST = ['createdAt', 'updatedAt', 'status', 'priority', 'startDate', 'completedAt'];
 
-export async function getServices(q: ServiceQuery) {
+export async function getServices(q: ServiceQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, shipId, serviceTypeId, status, priority, assignedUserId, sortOrder = 'desc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'createdAt';
 
+  const tenantFilter = companyId ? { companyId } : {};
+
   const where = {
     deletedAt: null,
+    ...tenantFilter,
     ...(search
       ? {
           OR: [
@@ -63,9 +66,10 @@ export async function getServices(q: ServiceQuery) {
   return { data, total, page, pageSize };
 }
 
-export async function getServiceById(id: string) {
+export async function getServiceById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const s = await prisma.service.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...tenantFilter },
     include: {
       customer: { select: { id: true, name: true, shortCode: true } },
       ship: { select: { id: true, name: true, imoNumber: true } },
@@ -117,13 +121,16 @@ export async function createService(
     invoiceReady?: boolean;
     invoiceReadyNote?: string;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string
 ) {
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
   const { startDate, ...rest } = data;
   return prisma.$transaction(async (tx) => {
     const created = await tx.service.create({
       data: {
         ...rest,
+        companyId,
         createdById: userId,
         ...(startDate ? { startDate: new Date(startDate) } : {}),
       },
@@ -162,9 +169,11 @@ export async function updateService(
     invoiceReady?: boolean;
     invoiceReadyNote?: string;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
-  const existing = await prisma.service.findFirst({ where: { id, deletedAt: null } });
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.service.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!existing) throw new AppError('Service not found', 404);
 
   const { startDate, completedAt, ...rest } = data;
@@ -209,8 +218,9 @@ export async function updateService(
   });
 }
 
-export async function deleteService(id: string, userId?: string) {
-  const s = await prisma.service.findFirst({ where: { id, deletedAt: null } });
+export async function deleteService(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const s = await prisma.service.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!s) throw new AppError('Service not found', 404);
   return prisma.service.update({
     where: { id },
@@ -218,6 +228,10 @@ export async function deleteService(id: string, userId?: string) {
   });
 }
 
-export async function getServiceTypes() {
-  return prisma.serviceType.findMany({ orderBy: { nameEn: 'asc' } });
+export async function getServiceTypes(companyId: string | null) {
+  // Return global types + company-specific types
+  return prisma.serviceType.findMany({
+    where: { OR: [{ companyId: null }, ...(companyId ? [{ companyId }] : [])] },
+    orderBy: { nameEn: 'asc' },
+  });
 }

@@ -52,7 +52,7 @@ export function Modal({ open, onClose, title, size = 'md', children, footer }: M
       <div
         ref={panelRef}
         className={cn(
-          'relative z-10 bg-white rounded-xl shadow-2xl w-full flex flex-col',
+          'relative z-10 bg-card text-card-foreground rounded-xl shadow-2xl w-full flex flex-col',
           'max-h-[90vh]',
           sizes[size]
         )}
@@ -61,11 +61,11 @@ export function Modal({ open, onClose, title, size = 'md', children, footer }: M
         aria-label={title}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 transition-colors rounded-md p-1 hover:bg-gray-100"
+            className="text-muted-foreground hover:text-foreground transition-colors rounded-md p-1 hover:bg-accent"
           >
             <X className="w-5 h-5" />
           </button>
@@ -78,7 +78,7 @@ export function Modal({ open, onClose, title, size = 'md', children, footer }: M
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-xl shrink-0">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-muted rounded-b-xl shrink-0">
             {footer}
           </div>
         )}

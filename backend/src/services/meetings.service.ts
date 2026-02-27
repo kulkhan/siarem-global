@@ -12,14 +12,15 @@ interface MeetingQuery {
   sortOrder?: 'asc' | 'desc';
 }
 
-export async function getMeetings(q: MeetingQuery) {
+export async function getMeetings(q: MeetingQuery, companyId: string | null) {
   const page = q.page ?? 1;
   const pageSize = q.pageSize ?? 20;
   const skip = (page - 1) * pageSize;
   const sortBy = q.sortBy ?? 'meetingDate';
   const sortOrder = q.sortOrder ?? 'desc';
 
-  const where: Record<string, unknown> = { deletedAt: null };
+  const tenantFilter = companyId ? { companyId } : {};
+  const where: Record<string, unknown> = { deletedAt: null, ...tenantFilter };
 
   if (q.customerId) where.customerId = q.customerId;
   if (q.meetingType) where.meetingType = q.meetingType;
@@ -53,9 +54,10 @@ export async function getMeetings(q: MeetingQuery) {
   return { data, total, page, pageSize };
 }
 
-export async function getMeetingById(id: string) {
+export async function getMeetingById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   return prisma.meeting.findFirstOrThrow({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...tenantFilter },
     include: {
       customer: { select: { id: true, name: true, shortCode: true } },
       ship: { select: { id: true, name: true, imoNumber: true } },
@@ -79,11 +81,13 @@ export async function createMeeting(
     attendees?: string;
     notes?: string;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string
 ) {
   return prisma.meeting.create({
     data: {
       customerId: data.customerId,
+      companyId: companyId!,
       shipId: data.shipId || undefined,
       createdById: data.createdById || userId || undefined,
       meetingType: data.meetingType ?? 'MEETING',
@@ -118,8 +122,13 @@ export async function updateMeeting(
     attendees: string | null;
     notes: string | null;
   }>,
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
+  const tenantFilter = companyId ? { companyId } : {};
+  // Verify ownership
+  await prisma.meeting.findFirstOrThrow({ where: { id, deletedAt: null, ...tenantFilter } });
+
   return prisma.meeting.update({
     where: { id },
     data: {
@@ -136,7 +145,9 @@ export async function updateMeeting(
   });
 }
 
-export async function deleteMeeting(id: string, userId?: string) {
+export async function deleteMeeting(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  await prisma.meeting.findFirstOrThrow({ where: { id, deletedAt: null, ...tenantFilter } });
   return prisma.meeting.update({
     where: { id },
     data: { deletedAt: new Date(), deletedById: userId },

@@ -4,7 +4,8 @@ import { logAudit } from '../services/audit.service';
 
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const data = await getContacts(req.params.customerId);
+    const companyId = req.user?.companyId ?? null;
+    const data = await getContacts(req.params.customerId, companyId);
     res.json({ success: true, data });
   } catch (err) { next(err); }
 }
@@ -12,7 +13,8 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    const data = await createContact(req.params.customerId, req.body, userId);
+    const companyId = req.user?.companyId ?? undefined;
+    const data = await createContact(req.params.customerId, req.body, userId, companyId);
     await logAudit(req, 'Contact', 'CREATE', data.id);
     res.status(201).json({ success: true, data });
   } catch (err) { next(err); }

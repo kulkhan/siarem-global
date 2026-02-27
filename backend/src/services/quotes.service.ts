@@ -15,21 +15,24 @@ export interface QuoteQuery {
 
 const SORT_WHITELIST = ['quoteDate', 'createdAt', 'status', 'quoteNumber'];
 
-async function generateQuoteNumber(quoteDate: Date): Promise<string> {
+async function generateQuoteNumber(quoteDate: Date, companyId: string): Promise<string> {
   const dd = String(quoteDate.getDate()).padStart(2, '0');
   const mm = String(quoteDate.getMonth() + 1).padStart(2, '0');
   const yyyy = quoteDate.getFullYear();
-  const count = await prisma.quote.count();
+  const count = await prisma.quote.count({ where: { companyId } });
   const seq = String(count + 1).padStart(5, '0');
   return `${seq}-ODDYSHIP-${dd}${mm}${yyyy}`;
 }
 
-export async function getQuotes(q: QuoteQuery) {
+export async function getQuotes(q: QuoteQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, serviceId, status, sortOrder = 'desc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'quoteDate';
 
+  const tenantFilter = companyId ? { companyId } : {};
+
   const where = {
     deletedAt: null,
+    ...tenantFilter,
     ...(search
       ? {
           OR: [
@@ -69,9 +72,20 @@ export async function getQuotes(q: QuoteQuery) {
   return { data, total, page, pageSize };
 }
 
-export async function getQuoteById(id: string) {
+export interface QuoteItemInput {
+  productId?: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  currency: string;
+  total: number;
+  sortOrder?: number;
+}
+
+export async function getQuoteById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const quote = await prisma.quote.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...tenantFilter },
     include: {
       customer: { select: { id: true, name: true, shortCode: true } },
       service: {
@@ -84,6 +98,7 @@ export async function getQuoteById(id: string) {
       createdBy: { select: { id: true, name: true } },
       quoteShips: { include: { ship: { select: { id: true, name: true, imoNumber: true } } } },
       invoices: { select: { id: true, refNo: true, amount: true, currency: true, status: true } },
+      items: { include: { product: true }, orderBy: { sortOrder: 'asc' } },
     },
   });
   if (!quote) throw new AppError('Quote not found', 404);
@@ -104,18 +119,41 @@ export async function createQuote(data: {
   combinedInvoice?: boolean;
   notes?: string;
   createdById?: string;
-}) {
-  const { quoteDate, validUntil, quoteNumber: providedQuoteNumber, ...rest } = data;
+  items?: QuoteItemInput[];
+}, companyId?: string) {
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
+  const { quoteDate, validUntil, quoteNumber: providedQuoteNumber, items, ...rest } = data;
   const date = new Date(quoteDate);
-  const quoteNumber = providedQuoteNumber || (await generateQuoteNumber(date));
+  const quoteNumber = providedQuoteNumber || (await generateQuoteNumber(date, companyId));
 
-  return prisma.quote.create({
-    data: {
-      ...rest,
-      quoteNumber,
-      quoteDate: date,
-      ...(validUntil ? { validUntil: new Date(validUntil) } : {}),
-    },
+  return prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.create({
+      data: {
+        ...rest,
+        companyId,
+        quoteNumber,
+        quoteDate: date,
+        ...(validUntil ? { validUntil: new Date(validUntil) } : {}),
+      },
+    });
+
+    if (items && items.length > 0) {
+      await tx.quoteItem.createMany({
+        data: items.map((item, i) => ({
+          id: require('crypto').randomUUID(),
+          quoteId: quote.id,
+          productId: item.productId ?? null,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          currency: item.currency,
+          total: item.total,
+          sortOrder: item.sortOrder ?? i,
+        })),
+      });
+    }
+
+    return quote;
   });
 }
 
@@ -134,26 +172,54 @@ export async function updateQuote(
     status?: QuoteStatus;
     combinedInvoice?: boolean;
     notes?: string;
+    items?: QuoteItemInput[];
   },
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
-  const existing = await prisma.quote.findFirst({ where: { id, deletedAt: null } });
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.quote.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!existing) throw new AppError('Quote not found', 404);
 
-  const { quoteDate, validUntil, ...rest } = data;
-  return prisma.quote.update({
-    where: { id },
-    data: {
-      ...rest,
-      updatedById: userId,
-      ...(quoteDate ? { quoteDate: new Date(quoteDate) } : {}),
-      ...(validUntil !== undefined ? { validUntil: validUntil ? new Date(validUntil) : null } : {}),
-    },
+  const { quoteDate, validUntil, items, ...rest } = data;
+
+  return prisma.$transaction(async (tx) => {
+    const quote = await tx.quote.update({
+      where: { id },
+      data: {
+        ...rest,
+        updatedById: userId,
+        ...(quoteDate ? { quoteDate: new Date(quoteDate) } : {}),
+        ...(validUntil !== undefined ? { validUntil: validUntil ? new Date(validUntil) : null } : {}),
+      },
+    });
+
+    if (items !== undefined) {
+      await tx.quoteItem.deleteMany({ where: { quoteId: id } });
+      if (items.length > 0) {
+        await tx.quoteItem.createMany({
+          data: items.map((item, i) => ({
+            id: require('crypto').randomUUID(),
+            quoteId: id,
+            productId: item.productId ?? null,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            currency: item.currency,
+            total: item.total,
+            sortOrder: item.sortOrder ?? i,
+          })),
+        });
+      }
+    }
+
+    return quote;
   });
 }
 
-export async function deleteQuote(id: string, userId?: string) {
-  const q = await prisma.quote.findFirst({ where: { id, deletedAt: null } });
+export async function deleteQuote(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const q = await prisma.quote.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!q) throw new AppError('Quote not found', 404);
   return prisma.quote.update({
     where: { id },

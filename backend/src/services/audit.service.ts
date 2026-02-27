@@ -9,16 +9,18 @@ export async function logAudit(
   changes?: object,
 ) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userName = (req as any).user?.name as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const companyId = (req as any).user?.companyId as string | undefined;
 
-    // Hostname from X-Forwarded-Host or Host header
     const hostname =
       (req.headers['x-forwarded-host'] as string) ||
       (req.headers['host'] as string) ||
       undefined;
 
-    // Client IP: X-Forwarded-For (first entry) or remoteAddress
     const xForwardedFor = req.headers['x-forwarded-for'] as string | undefined;
     const ipAddress = xForwardedFor
       ? xForwardedFor.split(',')[0].trim()
@@ -28,6 +30,7 @@ export async function logAudit(
 
     await prisma.auditLog.create({
       data: {
+        companyId: companyId ?? undefined,
         entityType,
         entityId,
         action,
@@ -36,6 +39,7 @@ export async function logAudit(
         ipAddress,
         hostname,
         userAgent,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         changes: changes ? (changes as any) : undefined,
       },
     });
@@ -52,10 +56,12 @@ export async function getAuditLogs(params: {
   to?: string;
   page?: number;
   limit?: number;
-}) {
+}, companyId: string | null) {
   const { entityType, action, userId, from, to, page = 1, limit = 20 } = params;
 
-  const where: any = {};
+  const tenantFilter = companyId ? { companyId } : {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = { ...tenantFilter };
   if (entityType) where.entityType = entityType;
   if (action) where.action = action;
   if (userId) where.userId = userId;

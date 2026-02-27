@@ -1,8 +1,9 @@
 import { prisma } from '../lib/prisma';
 
-export async function getContacts(customerId: string) {
+export async function getContacts(customerId: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   return prisma.contact.findMany({
-    where: { customerId, deletedAt: null },
+    where: { customerId, deletedAt: null, ...tenantFilter },
     orderBy: [{ isPrimary: 'desc' }, { name: 'asc' }],
   });
 }
@@ -17,7 +18,8 @@ export async function createContact(
     isPrimary?: boolean;
     notes?: string;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string
 ) {
   if (data.isPrimary) {
     await prisma.contact.updateMany({
@@ -26,7 +28,7 @@ export async function createContact(
     });
   }
   return prisma.contact.create({
-    data: { ...data, customerId, createdById: userId },
+    data: { ...data, customerId, companyId: companyId!, createdById: userId },
   });
 }
 

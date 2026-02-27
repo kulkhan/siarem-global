@@ -69,27 +69,27 @@ export function DataGrid<T extends { id: string }>({
   return (
     <div className="flex flex-col h-full">
       {/* Table */}
-      <div className="flex-1 overflow-auto rounded-lg border border-gray-200 bg-white">
+      <div className="flex-1 overflow-auto rounded-lg border border-border bg-card">
         <table className="w-full text-[0.9375rem]">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-muted border-b border-border">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    'px-4 py-3.5 font-semibold text-gray-700 whitespace-nowrap select-none',
+                    'px-4 py-3.5 font-semibold text-foreground whitespace-nowrap select-none',
                     col.align === 'center' && 'text-center',
                     col.align === 'right' && 'text-right',
                     !col.align && 'text-left',
                     col.width,
-                    col.sortable && 'cursor-pointer hover:bg-gray-100 transition-colors'
+                    col.sortable && 'cursor-pointer hover:bg-accent transition-colors'
                   )}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.label}
                     {col.sortable && (
-                      <span className="text-gray-400">
+                      <span className="text-muted-foreground">
                         {sortBy === col.key ? (
                           sortOrder === 'asc' ? (
                             <ChevronUp className="w-3.5 h-3.5 text-primary" />
@@ -110,7 +110,7 @@ export function DataGrid<T extends { id: string }>({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-16 text-gray-400">
+                <td colSpan={columns.length} className="text-center py-16 text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     <span>{t('common.loading')}</span>
@@ -119,7 +119,7 @@ export function DataGrid<T extends { id: string }>({
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-16 text-gray-400">
+                <td colSpan={columns.length} className="text-center py-16 text-muted-foreground">
                   {t('common.noData')}
                 </td>
               </tr>
@@ -131,8 +131,8 @@ export function DataGrid<T extends { id: string }>({
                   className={cn(
                     'border-b cursor-pointer transition-colors',
                     selectedId === row.id
-                      ? 'bg-blue-100 border-blue-200 ring-1 ring-inset ring-blue-300'
-                      : 'border-gray-100 hover:bg-gray-50'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 ring-1 ring-inset ring-blue-300'
+                      : 'border-border hover:bg-accent/50'
                   )}
                 >
                   {columns.map((col) => (
@@ -142,7 +142,7 @@ export function DataGrid<T extends { id: string }>({
                         'px-4 py-3.5',
                         col.align === 'center' && 'text-center',
                         col.align === 'right' && 'text-right',
-                        selectedId === row.id ? 'text-blue-900 font-medium' : 'text-gray-700'
+                        selectedId === row.id ? 'text-blue-900 dark:text-blue-200 font-medium' : 'text-foreground'
                       )}
                     >
                       {col.render
@@ -160,7 +160,7 @@ export function DataGrid<T extends { id: string }>({
       {/* Pagination */}
       {total > 0 && (
         <div className="flex items-center justify-between pt-3 shrink-0">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             {from}–{to} / {total}
           </span>
 
@@ -168,14 +168,14 @@ export function DataGrid<T extends { id: string }>({
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
-              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
             {getPageNumbers().map((p, i) =>
               p === '...' ? (
-                <span key={`dot-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                <span key={`dot-${i}`} className="px-2 text-muted-foreground text-sm">…</span>
               ) : (
                 <button
                   key={p}
@@ -184,7 +184,7 @@ export function DataGrid<T extends { id: string }>({
                     'min-w-[2rem] h-8 px-2 rounded-md text-sm font-medium transition-colors',
                     p === page
                       ? 'bg-primary text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-foreground hover:bg-accent'
                   )}
                 >
                   {p}
@@ -195,7 +195,7 @@ export function DataGrid<T extends { id: string }>({
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
-              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

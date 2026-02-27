@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import * as svc from '../services/users.service';
 import { AppError } from '../middleware/error.middleware';
 
-export async function list(_req: Request, res: Response, next: NextFunction) {
+export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const users = await svc.getUsers();
+    const companyId = req.user?.companyId ?? null;
+    const users = await svc.getUsers(companyId);
     res.json({ success: true, data: users });
   } catch (err) {
     next(err);
@@ -13,9 +14,10 @@ export async function list(_req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
+    const companyId = req.user?.companyId ?? null;
     const { name, email, password, role } = req.body;
     if (!name || !email || !password) throw new AppError('name, email, password zorunludur', 400);
-    const user = await svc.createUser({ name, email, password, role: role ?? 'USER' });
+    const user = await svc.createUser({ name, email, password, role: role ?? 'USER' }, companyId);
     res.status(201).json({ success: true, data: user });
   } catch (err: unknown) {
     const e = err as { code?: string; meta?: { target?: string[] } };
@@ -29,7 +31,6 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    // Protect: can't change own role/isActive
     if (req.user?.sub === id && (req.body.role !== undefined || req.body.isActive === false)) {
       throw new AppError('Kendi rolünüzü veya durumunuzu değiştiremezsiniz', 403);
     }
@@ -58,8 +59,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    // Only self or ADMIN can change password
-    if (req.user?.sub !== id && req.user?.role !== 'ADMIN') {
+    if (req.user?.sub !== id && req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       throw new AppError('Yetersiz yetki', 403);
     }
     const { newPassword } = req.body;

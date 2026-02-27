@@ -16,12 +16,15 @@ export interface ShipQuery {
 
 const SORT_WHITELIST = ['name', 'imoNumber', 'flag', 'status', 'builtYear', 'createdAt'];
 
-export async function getShips(q: ShipQuery) {
+export async function getShips(q: ShipQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, shipTypeId, status, flag, sortOrder = 'asc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'name';
 
+  const tenantFilter = companyId ? { companyId } : {};
+
   const where = {
     deletedAt: null,
+    ...tenantFilter,
     ...(search
       ? {
           OR: [
@@ -54,9 +57,10 @@ export async function getShips(q: ShipQuery) {
   return { data, total, page, pageSize };
 }
 
-export async function getShipById(id: string) {
+export async function getShipById(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const s = await prisma.ship.findFirst({
-    where: { id, deletedAt: null },
+    where: { id, deletedAt: null, ...tenantFilter },
     include: {
       customer: { select: { id: true, name: true, shortCode: true } },
       shipType: true,
@@ -86,35 +90,44 @@ export async function createShip(
     status?: ShipStatus;
     notes?: string;
   },
-  userId?: string
+  userId?: string,
+  companyId?: string
 ) {
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
   if (data.imoNumber) {
-    const existing = await prisma.ship.findUnique({ where: { imoNumber: data.imoNumber } });
+    const existing = await prisma.ship.findFirst({
+      where: { imoNumber: data.imoNumber, companyId, deletedAt: null },
+    });
     if (existing) throw new AppError('IMO numarası zaten kayıtlı', 400);
   }
-  return prisma.ship.create({ data: { ...data, createdById: userId } });
+  return prisma.ship.create({ data: { ...data, companyId, createdById: userId } });
 }
 
 export async function updateShip(
   id: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>,
-  userId?: string
+  userId?: string,
+  companyId?: string | null
 ) {
-  const s = await prisma.ship.findFirst({ where: { id, deletedAt: null } });
+  const tenantFilter = companyId ? { companyId } : {};
+  const s = await prisma.ship.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!s) throw new AppError('Ship not found', 404);
   if (data.imoNumber && data.imoNumber !== s.imoNumber) {
-    const existing = await prisma.ship.findUnique({ where: { imoNumber: data.imoNumber } });
+    const existing = await prisma.ship.findFirst({
+      where: { imoNumber: data.imoNumber, companyId: s.companyId, NOT: { id } },
+    });
     if (existing) throw new AppError('IMO numarası zaten kayıtlı', 400);
   }
   return prisma.ship.update({ where: { id }, data: { ...data, updatedById: userId } });
 }
 
-export async function deleteShip(id: string, userId?: string) {
+export async function deleteShip(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const svcCount = await prisma.service.count({ where: { shipId: id, deletedAt: null } });
   if (svcCount > 0)
     throw new AppError(`Bu gemiye ait ${svcCount} hizmet kaydı bulunuyor.`, 400);
-  const s = await prisma.ship.findFirst({ where: { id, deletedAt: null } });
+  const s = await prisma.ship.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!s) throw new AppError('Ship not found', 404);
   return prisma.ship.update({
     where: { id },
@@ -122,13 +135,18 @@ export async function deleteShip(id: string, userId?: string) {
   });
 }
 
-export async function getShipTypes() {
-  return prisma.shipType.findMany({ orderBy: { name: 'asc' } });
+export async function getShipTypes(companyId: string | null) {
+  // Return global types + company-specific types
+  return prisma.shipType.findMany({
+    where: { OR: [{ companyId: null }, ...(companyId ? [{ companyId }] : [])] },
+    orderBy: { name: 'asc' },
+  });
 }
 
-export async function getFlagOptions() {
+export async function getFlagOptions(companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   const rows = await prisma.ship.findMany({
-    where: { flag: { not: null }, deletedAt: null },
+    where: { flag: { not: null }, deletedAt: null, ...tenantFilter },
     select: { flag: true },
     distinct: ['flag'],
     orderBy: { flag: 'asc' },

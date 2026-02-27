@@ -43,6 +43,7 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
   const lang = i18n.language;
   const qc = useQueryClient();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [paymentForm, setPaymentForm] = useState<PaymentFormState>({
     amount: '',
     currency: 'EUR',
@@ -55,6 +56,14 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
     queryKey: ['invoice-detail', invoiceId],
     queryFn: () => invoicesApi.getOne(invoiceId).then((r) => r.data.data),
     enabled: !!invoiceId,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => invoicesApi.delete(invoiceId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      onClose();
+    },
   });
 
   const addPaymentMutation = useMutation({
@@ -112,6 +121,33 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50 shrink-0">
           <h2 className="text-base font-semibold text-gray-800">{t('invoices.detail')}</h2>
           <div className="flex items-center gap-2">
+            {inv?.status === 'DRAFT' && !confirmDelete && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 font-medium"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Sil
+              </button>
+            )}
+            {confirmDelete && (
+              <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-md px-2 py-1">
+                <span className="text-xs text-red-700 font-medium">Emin misin?</span>
+                <button
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
+                  className="text-xs text-white bg-red-600 hover:bg-red-700 px-2 py-0.5 rounded"
+                >
+                  Evet
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-gray-600 bg-white border border-gray-300 px-2 py-0.5 rounded hover:bg-gray-50"
+                >
+                  Hayır
+                </button>
+              </div>
+            )}
             <button
               onClick={onEdit}
               className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium text-gray-700"
@@ -391,6 +427,36 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
                 </div>
               )}
             </div>
+
+            {/* Items */}
+            {(inv as { items?: Array<{ id: string; description: string; quantity: number; unitPrice: number; currency: string; total: number; product?: { code: string } | null }> }).items?.length ? (
+              <div className="px-5 py-4 border-b border-gray-100">
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Kalemler</div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-400 border-b border-gray-100">
+                      <th className="text-left pb-1.5 font-medium">Açıklama</th>
+                      <th className="text-right pb-1.5 font-medium w-12">Miktar</th>
+                      <th className="text-right pb-1.5 font-medium w-20">Birim F.</th>
+                      <th className="text-right pb-1.5 font-medium w-24">Toplam</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {(inv as { items?: Array<{ id: string; description: string; quantity: number; unitPrice: number; currency: string; total: number; product?: { code: string } | null }> }).items!.map((item) => (
+                      <tr key={item.id}>
+                        <td className="py-1.5 text-gray-700">
+                          {item.product && <span className="font-mono text-gray-400 mr-1">[{item.product.code}]</span>}
+                          {item.description}
+                        </td>
+                        <td className="py-1.5 text-right text-gray-500 tabular-nums">{item.quantity}</td>
+                        <td className="py-1.5 text-right text-gray-500 tabular-nums">{fmt(item.unitPrice)} {item.currency}</td>
+                        <td className="py-1.5 text-right font-semibold text-gray-800 tabular-nums">{fmt(item.total)} {item.currency}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
 
             {/* Notes */}
             {inv.notes && (

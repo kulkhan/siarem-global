@@ -12,6 +12,7 @@ datasource db {
 // ─────────────────────────────────────────
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   MANAGER
   USER
@@ -67,33 +68,70 @@ enum EntityType {
 }
 
 // ─────────────────────────────────────────
+// COMPANY (Tenant)
+// ─────────────────────────────────────────
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String   @unique // e.g. acme.siarem.com
+  slug      String   @unique // e.g. acme
+  isActive  Boolean  @default(true)
+  plan      String?           // free | starter | pro | enterprise
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  customers    Customer[]
+  contacts     Contact[]
+  ships        Ship[]
+  services     Service[]
+  quotes       Quote[]
+  invoices     Invoice[]
+  meetings     Meeting[]
+  documents    Document[]
+  expenses     Expense[]
+  serviceTypes ServiceType[]
+  shipTypes    ShipType[]
+  auditLogs    AuditLog[]
+  products     Product[]
+  complaints   Complaint[]
+
+  @@map("companies")
+}
+
+// ─────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────
 
 model User {
   id        String   @id @default(cuid())
+  companyId String?  @map("company_id") // null for SUPER_ADMIN
   name      String
-  email     String   @unique
+  email     String
   password  String
   role      Role     @default(USER)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  company           Company?           @relation(fields: [companyId], references: [id])
   assignedServices  Service[]
   createdMeetings   Meeting[]
   uploadedDocs      Document[]
-  createdQuotes     Quote[]      @relation("QuoteCreator")
+  createdQuotes     Quote[]            @relation("QuoteCreator")
   createdInvoices   Invoice[]
   serviceLogs       ServiceLog[]
-  expenses          Expense[]    @relation("ExpenseCreatedBy")
-  createdCustomers  Customer[]          @relation("CustomerCreatedBy")
-  createdShips      Ship[]              @relation("ShipCreatedBy")
-  createdServices   Service[]           @relation("ServiceCreatedBy")
-  createdContacts   Contact[]           @relation("ContactCreatedBy")
+  expenses          Expense[]          @relation("ExpenseCreatedBy")
+  createdCustomers  Customer[]         @relation("CustomerCreatedBy")
+  createdShips      Ship[]             @relation("ShipCreatedBy")
+  createdServices   Service[]          @relation("ServiceCreatedBy")
+  createdContacts   Contact[]          @relation("ContactCreatedBy")
   auditLogs         AuditLog[]
   assignedCustomers CustomerAssignee[]
 
+  @@unique([companyId, email])
   @@map("users")
 }
 
@@ -103,7 +141,8 @@ model User {
 
 model Customer {
   id          String    @id @default(cuid())
-  shortCode   String    @unique // e.g. ADTOR, KAEN, ARAS
+  companyId   String    @map("company_id")
+  shortCode   String
   name        String
   email       String?
   phone       String?
@@ -119,6 +158,7 @@ model Customer {
   deletedAt   DateTime?
   deletedById String?
 
+  company    Company            @relation(fields: [companyId], references: [id])
   contacts   Contact[]
   ships      Ship[]
   services   Service[]
@@ -127,14 +167,17 @@ model Customer {
   meetings   Meeting[]
   documents  Document[]
   expenses   Expense[]
+  complaints Complaint[]
   createdBy  User?              @relation("CustomerCreatedBy", fields: [createdById], references: [id])
   assignees  CustomerAssignee[]
 
+  @@unique([companyId, shortCode])
   @@map("customers")
 }
 
 model Contact {
   id          String    @id @default(cuid())
+  companyId   String    @map("company_id")
   customerId  String
   name        String
   title       String?
@@ -149,6 +192,7 @@ model Contact {
   deletedAt   DateTime?
   deletedById String?
 
+  company   Company  @relation(fields: [companyId], references: [id])
   customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   createdBy User?    @relation("ContactCreatedBy", fields: [createdById], references: [id])
 
@@ -160,11 +204,13 @@ model Contact {
 // ─────────────────────────────────────────
 
 model ShipType {
-  id      Int    @id @default(autoincrement())
-  name    String @unique
-  ciiType String // "DWT" or "GT"
+  id        Int     @id @default(autoincrement())
+  companyId String? @map("company_id") // null = global
+  name      String
+  ciiType   String  // "DWT" or "GT"
 
-  ships Ship[]
+  company Company? @relation(fields: [companyId], references: [id])
+  ships   Ship[]
 
   @@map("ship_types")
 }
@@ -175,9 +221,10 @@ model ShipType {
 
 model Ship {
   id                    String     @id @default(cuid())
+  companyId             String     @map("company_id")
   customerId            String
   name                  String
-  imoNumber             String?    @unique
+  imoNumber             String?
   shipTypeId            Int?
   flag                  String?
   grossTonnage          Float?
@@ -198,6 +245,7 @@ model Ship {
   deletedAt             DateTime?
   deletedById           String?
 
+  company    Company   @relation(fields: [companyId], references: [id])
   customer   Customer  @relation(fields: [customerId], references: [id])
   shipType   ShipType? @relation(fields: [shipTypeId], references: [id])
   services   Service[]
@@ -207,6 +255,7 @@ model Ship {
   expenses   Expense[]
   createdBy  User?     @relation("ShipCreatedBy", fields: [createdById], references: [id])
 
+  @@unique([companyId, imoNumber])
   @@map("ships")
 }
 
@@ -216,12 +265,14 @@ model Ship {
 
 model ServiceType {
   id          Int     @id @default(autoincrement())
+  companyId   String? @map("company_id") // null = global
   nameEn      String
   nameTr      String
-  code        String  @unique
+  code        String
   category    String?
   description String?
 
+  company  Company?  @relation(fields: [companyId], references: [id])
   services Service[]
 
   @@map("service_types")
@@ -233,6 +284,7 @@ model ServiceType {
 
 model Service {
   id             String        @id @default(cuid())
+  companyId      String        @map("company_id")
   customerId     String
   shipId         String?
   serviceTypeId  Int?
@@ -264,6 +316,7 @@ model Service {
   deletedAt   DateTime?
   deletedById String?
 
+  company      Company      @relation(fields: [companyId], references: [id])
   customer     Customer     @relation(fields: [customerId], references: [id])
   ship         Ship?        @relation(fields: [shipId], references: [id])
   serviceType  ServiceType? @relation(fields: [serviceTypeId], references: [id])
@@ -305,7 +358,8 @@ model ServiceLog {
 
 model Quote {
   id            String      @id @default(cuid())
-  quoteNumber   String      @unique // NNNNN-ODDYSHIP-DDMMYYYY
+  companyId     String      @map("company_id")
+  quoteNumber   String      // NNNNN-ODDYSHIP-DDMMYYYY
   revision      Int         @default(1)
   parentQuoteId String?     // links to previous revision
 
@@ -330,6 +384,7 @@ model Quote {
   deletedAt      DateTime?
   deletedById    String?
 
+  company     Company     @relation(fields: [companyId], references: [id])
   customer    Customer    @relation(fields: [customerId], references: [id])
   service     Service?    @relation(fields: [serviceId], references: [id])
   createdBy   User?       @relation("QuoteCreator", fields: [createdById], references: [id])
@@ -338,7 +393,9 @@ model Quote {
   quoteShips  QuoteShip[]
   invoices    Invoice[]
   documents   Document[]
+  items       QuoteItem[]
 
+  @@unique([companyId, quoteNumber])
   @@map("quotes")
 }
 
@@ -361,7 +418,8 @@ model QuoteShip {
 
 model Invoice {
   id          String        @id @default(cuid())
-  refNo       String?       @unique // CS-XXXXX or ODA2025XXXXXXXXX
+  companyId   String        @map("company_id")
+  refNo       String?       // CS-XXXXX or ODA2025XXXXXXXXX
   customerId  String
   serviceId   String?
   quoteId     String?
@@ -380,6 +438,7 @@ model Invoice {
   deletedAt   DateTime?
   deletedById String?
 
+  company   Company   @relation(fields: [companyId], references: [id])
   customer  Customer  @relation(fields: [customerId], references: [id])
   service   Service?  @relation(fields: [serviceId], references: [id])
   quote     Quote?    @relation(fields: [quoteId], references: [id])
@@ -387,7 +446,9 @@ model Invoice {
   payments  Payment[]
   documents Document[]
   expenses  Expense[]
+  items     InvoiceItem[]
 
+  @@unique([companyId, refNo])
   @@map("invoices")
 }
 
@@ -417,6 +478,7 @@ model Payment {
 
 model Meeting {
   id           String    @id @default(cuid())
+  companyId    String    @map("company_id")
   customerId   String
   shipId       String?
   createdById  String?
@@ -435,6 +497,7 @@ model Meeting {
   deletedAt    DateTime?
   deletedById  String?
 
+  company   Company    @relation(fields: [companyId], references: [id])
   customer  Customer   @relation(fields: [customerId], references: [id])
   ship      Ship?      @relation(fields: [shipId], references: [id])
   createdBy User?      @relation(fields: [createdById], references: [id])
@@ -449,6 +512,7 @@ model Meeting {
 
 model Document {
   id               String     @id @default(cuid())
+  companyId        String     @map("company_id")
   entityType       EntityType
   displayName      String     // user-friendly name
   storedFilename   String     // {id}_{slug}.ext
@@ -458,7 +522,8 @@ model Document {
   uploadedById     String?
   createdAt        DateTime   @default(now())
 
-  uploadedBy User? @relation(fields: [uploadedById], references: [id])
+  company    Company  @relation(fields: [companyId], references: [id])
+  uploadedBy User?    @relation(fields: [uploadedById], references: [id])
 
   // Polymorphic FK fields
   customerId String?
@@ -484,6 +549,7 @@ model Document {
 
 model Expense {
   id          String   @id @default(cuid())
+  companyId   String   @map("company_id")
   type        String   // INCOME | EXPENSE
   category    String?  // Personnel, Office, Travel, Service Cost, Other...
   description String
@@ -502,6 +568,7 @@ model Expense {
   deletedAt   DateTime?
   deletedById String?
 
+  company   Company   @relation(fields: [companyId], references: [id])
   customer  Customer? @relation(fields: [customerId], references: [id])
   ship      Ship?     @relation(fields: [shipId], references: [id])
   service   Service?  @relation(fields: [serviceId], references: [id])
@@ -517,18 +584,20 @@ model Expense {
 
 model AuditLog {
   id         String   @id @default(cuid())
-  entityType String               // "Customer", "Ship", "Service", etc.
+  companyId  String?  @map("company_id") // null = system-level log
+  entityType String             // "Customer", "Ship", "Service", etc.
   entityId   String?
-  action     String               // CREATE | UPDATE | DELETE
+  action     String             // CREATE | UPDATE | DELETE
   userId     String?
-  userName   String?              // Snapshot — survives if user deleted
+  userName   String?            // Snapshot — survives if user deleted
   ipAddress  String?
   hostname   String?
   userAgent  String?
   changes    Json?
   createdAt  DateTime @default(now())
 
-  user User? @relation(fields: [userId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
 
   @@index([entityType, entityId])
   @@index([userId])
@@ -550,4 +619,114 @@ model CustomerAssignee {
 
   @@id([customerId, userId])
   @@map("customer_assignees")
+}
+
+// ─────────────────────────────────────────
+// PRODUCTS (Ürün Kataloğu / Envanter)
+// ─────────────────────────────────────────
+
+model Product {
+  id           String   @id @default(cuid())
+  companyId    String   @map("company_id")
+  code         String
+  name         String
+  nameEn       String?  @map("name_en")
+  unit         String   @default("ADET")
+  unitPriceEur Decimal? @map("unit_price_eur") @db.Decimal(14, 4)
+  unitPriceUsd Decimal? @map("unit_price_usd") @db.Decimal(14, 4)
+  unitPriceTry Decimal? @map("unit_price_try") @db.Decimal(14, 4)
+  description  String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  company      Company       @relation(fields: [companyId], references: [id])
+  quoteItems   QuoteItem[]
+  invoiceItems InvoiceItem[]
+
+  @@unique([companyId, code])
+  @@map("products")
+}
+
+// ─────────────────────────────────────────
+// QUOTE ITEMS (Teklif Kalemleri)
+// ─────────────────────────────────────────
+
+model QuoteItem {
+  id          String  @id @default(cuid())
+  quoteId     String  @map("quote_id")
+  productId   String? @map("product_id")
+  description String
+  quantity    Decimal @db.Decimal(14, 4)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(14, 4)
+  currency    String  @default("USD")
+  total       Decimal @db.Decimal(14, 4)
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  quote   Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("quote_items")
+}
+
+// ─────────────────────────────────────────
+// INVOICE ITEMS (Fatura Kalemleri)
+// ─────────────────────────────────────────
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String  @map("invoice_id")
+  productId   String? @map("product_id")
+  description String
+  quantity    Decimal @db.Decimal(14, 4)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(14, 4)
+  currency    String  @default("USD")
+  total       Decimal @db.Decimal(14, 4)
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}
+
+// ─────────────────────────────────────────
+// COMPLAINTS
+// ─────────────────────────────────────────
+
+enum ComplaintType {
+  COMPLAINT
+  FEEDBACK
+  SUGGESTION
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model Complaint {
+  id           String          @id @default(cuid())
+  companyId    String          @map("company_id")
+  customerId   String?         @map("customer_id")
+  type         ComplaintType   @default(COMPLAINT)
+  status       ComplaintStatus @default(OPEN)
+  subject      String
+  description  String
+  responseNote String?         @map("response_note")
+  respondedAt  DateTime?       @map("responded_at")
+  submittedAt  DateTime        @default(now()) @map("submitted_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  // Optional contact info (for public submissions without customerId)
+  contactName  String?  @map("contact_name")
+  contactEmail String?  @map("contact_email")
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@map("complaints")
 }

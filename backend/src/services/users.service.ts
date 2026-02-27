@@ -1,9 +1,11 @@
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 
-export async function getUsers() {
+export async function getUsers(companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
   return prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    where: { ...tenantFilter, role: { not: 'SUPER_ADMIN' } },
+    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, companyId: true },
     orderBy: { name: 'asc' },
   });
 }
@@ -13,16 +15,17 @@ export async function createUser(data: {
   email: string;
   password: string;
   role: string;
-}) {
+}, companyId?: string | null) {
   const hashed = await bcrypt.hash(data.password, 10);
   return prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
       password: hashed,
-      role: data.role as 'ADMIN' | 'MANAGER' | 'USER',
+      role: data.role as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'USER',
+      companyId: companyId ?? undefined,
     },
-    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, companyId: true },
   });
 }
 
@@ -46,7 +49,7 @@ export async function updateUser(
   return prisma.user.update({
     where: { id },
     data: updateData,
-    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true, companyId: true },
   });
 }
 

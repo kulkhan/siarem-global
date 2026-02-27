@@ -69,4 +69,7 @@ export const quotesApi = {
 
   delete: (id: string) =>
     api.delete<{ success: boolean }>(`/quotes/${id}`),
+
+  convertToInvoice: (id: string) =>
+    api.post<{ success: boolean; data: { id: string } }>(`/quotes/${id}/convert-to-invoice`),
 };

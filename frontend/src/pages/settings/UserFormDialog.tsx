@@ -2,14 +2,18 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Building2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/select';
 import { FormSection, Field } from '@/components/shared/FormSection';
 import { usersApi } from '@/api/users';
+import { getCompanies } from '@/api/companies';
+import { useAuthStore } from '@/store/auth.store';
+import { useTenantStore } from '@/store/tenant.store';
 import type { User } from '@/types';
 
 const createSchema = z.object({
@@ -49,7 +53,20 @@ const ROLE_OPTIONS = [
 
 export default function UserFormDialog({ open, mode, user, isSelf, onClose, onSaved }: Props) {
   const { t } = useTranslation();
+  const { user: me } = useAuthStore();
+  const { selectedCompanyId } = useTenantStore();
+  const isSuperAdmin = me?.role === 'SUPER_ADMIN';
   const isEdit = mode === 'edit';
+
+  // For SUPER_ADMIN: show selected company name in dialog
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: getCompanies,
+    enabled: isSuperAdmin,
+  });
+  const selectedCompany = isSuperAdmin
+    ? companies.find((c) => c.id === selectedCompanyId)
+    : null;
 
   const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(isEdit ? editSchema : createSchema) as never,
@@ -59,7 +76,10 @@ export default function UserFormDialog({ open, mode, user, isSelf, onClose, onSa
   useEffect(() => {
     if (!open) return;
     if (isEdit && user) {
-      reset({ name: user.name, email: user.email, password: '', role: user.role, isActive: user.isActive });
+      const safeRole = (['ADMIN', 'MANAGER', 'USER'] as const).includes(user.role as never)
+        ? (user.role as 'ADMIN' | 'MANAGER' | 'USER')
+        : 'ADMIN';
+      reset({ name: user.name, email: user.email, password: '', role: safeRole, isActive: user.isActive });
     } else {
       reset({ name: '', email: '', password: '', role: 'USER', isActive: true });
     }
@@ -136,6 +156,13 @@ export default function UserFormDialog({ open, mode, user, isSelf, onClose, onSa
         {isSelf && (
           <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-1">
             {t('settings.users.selfNote')}
+          </p>
+        )}
+
+        {selectedCompany && (
+          <p className="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-3 py-2 mt-1">
+            <Building2 className="w-3.5 h-3.5 shrink-0" />
+            Tenant: <strong>{selectedCompany.name}</strong>
           </p>
         )}
 

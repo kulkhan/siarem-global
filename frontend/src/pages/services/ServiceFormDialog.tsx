@@ -13,6 +13,7 @@ import { FormSection, Field } from '@/components/shared/FormSection';
 import { servicesApi } from '@/api/services';
 import { customersApi } from '@/api/customers';
 import { shipsApi } from '@/api/ships';
+import { quotesApi } from '@/api/quotes';
 
 const schema = z.object({
   customerId: z.string().min(1, 'required'),
@@ -31,6 +32,7 @@ const schema = z.object({
   imoDcsStatus: z.string().max(200).optional(),
   euEtsStatus: z.string().max(200).optional(),
   mohaStatus: z.string().max(200).optional(),
+  quoteId: z.string().optional(),
   invoiceReady: z.boolean().optional(),
   invoiceReadyNote: z.string().max(500).optional(),
 });
@@ -91,6 +93,15 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
     enabled: !!watchedCustomerId,
   });
 
+  // Quotes filtered by selected customer
+  const { data: quotes } = useQuery({
+    queryKey: ['quotes-mini', watchedCustomerId],
+    queryFn: () =>
+      quotesApi.list({ customerId: watchedCustomerId, pageSize: 500, sortBy: 'quoteDate', sortOrder: 'desc' })
+        .then((r) => r.data.data),
+    enabled: !!watchedCustomerId,
+  });
+
   // Populate form on edit
   useEffect(() => {
     if (!open) return;
@@ -106,6 +117,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
         completedAt: existing.completedAt ? existing.completedAt.slice(0, 10) : '',
         statusNote: existing.statusNote ?? '',
         notes: existing.notes ?? '',
+        quoteId: (existing as { quoteId?: string }).quoteId ?? '',
         invoiceReady: existing.invoiceReady ?? false,
         invoiceReadyNote: existing.invoiceReadyNote ?? '',
         euMrvMpStatus: existing.euMrvMpStatus ?? '',
@@ -139,6 +151,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
         imoDcsStatus: data.imoDcsStatus || undefined,
         euEtsStatus: data.euEtsStatus || undefined,
         mohaStatus: data.mohaStatus || undefined,
+        quoteId: data.quoteId || undefined,
         invoiceReady: data.invoiceReady ?? false,
         invoiceReadyNote: data.invoiceReadyNote || undefined,
       };
@@ -163,6 +176,14 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
     ...(serviceTypes?.map((st) => ({
       value: String(st.id),
       label: lang === 'tr' ? st.nameTr : st.nameEn,
+    })) ?? []),
+  ];
+
+  const quoteOptions = [
+    { value: '', label: watchedCustomerId ? '—' : '(önce müşteri seçin)' },
+    ...(quotes?.map((q) => ({
+      value: q.id,
+      label: `${q.quoteNumber} — ${q.status}${q.priceEur != null ? ` (€${q.priceEur?.toLocaleString('tr-TR', { maximumFractionDigits: 0 })})` : ''}`,
     })) ?? []),
   ];
 
@@ -228,6 +249,20 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
 
           <Field label={t('services.fields.assignedUser')}>
             <Input {...register('assignedUserId')} placeholder="Kullanıcı ID" />
+          </Field>
+
+          <Field label="Teklif (opsiyonel)">
+            <Controller
+              control={control}
+              name="quoteId"
+              render={({ field }) => (
+                <NativeSelect
+                  {...field}
+                  options={quoteOptions}
+                  disabled={!watchedCustomerId}
+                />
+              )}
+            />
           </Field>
         </FormSection>
 

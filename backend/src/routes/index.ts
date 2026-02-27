@@ -10,10 +10,17 @@ import dashboardRoutes from './dashboard.routes';
 import expensesRoutes from './expenses.routes';
 import usersRoutes from './users.routes';
 import auditRoutes from './audit.routes';
+import companiesRoutes from './companies.routes';
+import serviceTypesRoutes from './serviceTypes.routes';
+import productsRoutes from './products.routes';
+import complaintsRoutes from './complaints.routes';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/companies', companiesRoutes);
+router.use('/service-types', serviceTypesRoutes);
+router.use('/products', productsRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/customers', customersRoutes);
 router.use('/ships', shipsRoutes);
@@ -24,6 +31,7 @@ router.use('/meetings', meetingsRoutes);
 router.use('/expenses', expensesRoutes);
 router.use('/users', usersRoutes);
 router.use('/audit', auditRoutes);
+router.use('/complaints', complaintsRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

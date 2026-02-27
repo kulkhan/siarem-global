@@ -5,4 +5,5 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   uploadDir: process.env.UPLOAD_DIR || './uploads',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  adminDomain: process.env.ADMIN_DOMAIN || 'admin.siarem.local',
 };
