@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import { loginUser, getCurrentUser, registerTenant } from '../services/auth.service';
 import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
+import { verifyRecaptcha } from '../lib/recaptcha';
 
 export const loginValidation = [
   body('email').isEmail().withMessage('Valid email required'),
@@ -57,9 +58,15 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { companyName, slug, adminName, adminEmail, adminPassword } = req.body as {
-      companyName?: string; slug?: string; adminName?: string; adminEmail?: string; adminPassword?: string;
+    const { companyName, slug, adminName, adminEmail, adminPassword, recaptchaToken } = req.body as {
+      companyName?: string; slug?: string; adminName?: string; adminEmail?: string; adminPassword?: string; recaptchaToken?: string;
     };
+
+    const captchaOk = await verifyRecaptcha(recaptchaToken ?? '');
+    if (!captchaOk) {
+      res.status(400).json({ success: false, message: 'CAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.' });
+      return;
+    }
 
     if (!companyName || !slug || !adminName || !adminEmail || !adminPassword) {
       res.status(400).json({ success: false, message: 'Tüm alanlar zorunludur' });

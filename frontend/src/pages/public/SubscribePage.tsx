@@ -1,28 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Anchor, ArrowLeft, CheckCircle, Building2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Anchor, ArrowLeft, CheckCircle, Building2, Globe } from 'lucide-react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import api from '@/lib/api';
 
-const schema = z.object({
-  companyName: z.string().min(2, 'Firma adı en az 2 karakter olmalı').max(100),
-  slug: z
-    .string()
-    .min(2, 'Firma kodu en az 2 karakter olmalı')
-    .max(30)
-    .regex(/^[a-z0-9-]+$/, 'Sadece küçük harf, rakam ve tire kullanın'),
-  adminName: z.string().min(2, 'Ad en az 2 karakter olmalı').max(80),
-  adminEmail: z.string().email('Geçerli bir e-posta girin'),
-  adminPassword: z.string().min(8, 'Şifre en az 8 karakter olmalı'),
-  confirmPassword: z.string(),
-}).refine((d) => d.adminPassword === d.confirmPassword, {
-  message: 'Şifreler eşleşmiyor',
-  path: ['confirmPassword'],
-});
-
-type FormData = z.infer<typeof schema>;
+// Google reCAPTCHA v2 — test site key (always passes). Replace via VITE_RECAPTCHA_SITE_KEY in production.
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MuLw16k3';
 
 function slugify(name: string) {
   return name
@@ -36,9 +23,34 @@ function slugify(name: string) {
 
 export default function SubscribePage() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState('');
   const [registeredSlug, setRegisteredSlug] = useState('');
+  const [captchaError, setCaptchaError] = useState('');
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+
+  // Rebuild Zod schema when language changes so validation messages are translated
+  const schema = useMemo(() => z.object({
+    companyName: z.string()
+      .min(2, t('subscribe.errors.companyNameMin'))
+      .max(100, t('subscribe.errors.companyNameMax')),
+    slug: z.string()
+      .min(2, t('subscribe.errors.slugMin'))
+      .max(30, t('subscribe.errors.slugMax'))
+      .regex(/^[a-z0-9-]+$/, t('subscribe.errors.slugPattern')),
+    adminName: z.string()
+      .min(2, t('subscribe.errors.adminNameMin'))
+      .max(80, t('subscribe.errors.adminNameMax')),
+    adminEmail: z.string().email(t('subscribe.errors.emailInvalid')),
+    adminPassword: z.string().min(8, t('subscribe.errors.passwordMin')),
+    confirmPassword: z.string(),
+  }).refine((d) => d.adminPassword === d.confirmPassword, {
+    message: t('subscribe.errors.passwordMismatch'),
+    path: ['confirmPassword'],
+  }), [t]);
+
+  type FormData = z.infer<typeof schema>;
 
   const {
     register,
@@ -57,6 +69,14 @@ export default function SubscribePage() {
 
   async function onSubmit(data: FormData) {
     setServerError('');
+    setCaptchaError('');
+
+    const recaptchaToken = recaptchaRef.current?.getValue();
+    if (!recaptchaToken) {
+      setCaptchaError(t('subscribe.captchaError'));
+      return;
+    }
+
     try {
       await api.post('/auth/register', {
         companyName: data.companyName,
@@ -64,13 +84,19 @@ export default function SubscribePage() {
         adminName: data.adminName,
         adminEmail: data.adminEmail,
         adminPassword: data.adminPassword,
+        recaptchaToken,
       });
       setRegisteredSlug(data.slug);
       setSuccess(true);
     } catch (err: unknown) {
+      recaptchaRef.current?.reset();
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setServerError(msg ?? 'Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+      setServerError(msg ?? t('subscribe.errors.serverDefault'));
     }
+  }
+
+  function toggleLang() {
+    i18n.changeLanguage(i18n.language === 'tr' ? 'en' : 'tr');
   }
 
   if (success) {
@@ -82,48 +108,43 @@ export default function SubscribePage() {
               <CheckCircle className="w-9 h-9 text-green-500" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Hesabınız Oluşturuldu!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('subscribe.successTitle')}</h2>
           <p className="text-gray-500 mb-2">
-            Firma kodu: <span className="font-mono font-semibold text-blue-700">{registeredSlug}</span>
+            {t('subscribe.successSlugLabel')}{' '}
+            <span className="font-mono font-semibold text-blue-700">{registeredSlug}</span>
           </p>
           <p className="text-gray-500 text-sm mb-8">
-            Artık giriş sayfasında firma kodunuzu kullanarak sisteme girebilirsiniz.
+            {t('subscribe.successDesc')}
           </p>
           <button
             onClick={() => navigate('/login', { state: { tenantSlug: registeredSlug } })}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
           >
-            Giriş Yap
+            {t('subscribe.successSignIn')}
           </button>
         </div>
       </div>
     );
   }
 
-  const field = (label: string, id: keyof FormData, type = 'text', placeholder = '', hint?: string) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        {...register(id)}
-        className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[id] ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
-      />
-      {hint && !errors[id] && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
-      {errors[id] && <p className="text-xs text-red-500 mt-1">{errors[id]?.message}</p>}
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
 
-        {/* Back link */}
-        <Link to="/" className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm mb-6">
-          <ArrowLeft className="w-4 h-4" />
-          Ana Sayfa
-        </Link>
+        {/* Back link + lang toggle */}
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm">
+            <ArrowLeft className="w-4 h-4" />
+            {t('subscribe.backHome')}
+          </Link>
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1 rounded"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="text-xs font-semibold uppercase">{i18n.language === 'tr' ? 'EN' : 'TR'}</span>
+          </button>
+        </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Header */}
@@ -132,8 +153,8 @@ export default function SubscribePage() {
               <Anchor className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Ücretsiz Hesap Oluştur</h1>
-              <p className="text-xs text-gray-400">oddyCRM — Denizcilik CRM Platformu</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('subscribe.pageTitle')}</h1>
+              <p className="text-xs text-gray-400">{t('subscribe.pageSubtitle')}</p>
             </div>
           </div>
 
@@ -142,14 +163,14 @@ export default function SubscribePage() {
             <div className="border-b border-gray-100 pb-4">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 <Building2 className="w-3.5 h-3.5" />
-                Firma Bilgileri
+                {t('subscribe.companySection')}
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Firma Adı *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subscribe.companyName')} *</label>
                   <input
                     type="text"
-                    placeholder="Acme Denizcilik A.Ş."
+                    placeholder={t('subscribe.companyNamePlaceholder')}
                     {...register('companyName')}
                     onBlur={handleCompanyNameBlur}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.companyName ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
@@ -157,7 +178,7 @@ export default function SubscribePage() {
                   {errors.companyName && <p className="text-xs text-red-500 mt-1">{errors.companyName.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Firma Kodu *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subscribe.companySlug')} *</label>
                   <div className="flex items-center">
                     <span className="px-3 py-2.5 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg text-xs text-gray-500 whitespace-nowrap">siarem.com/</span>
                     <input
@@ -167,7 +188,7 @@ export default function SubscribePage() {
                       className={`flex-1 px-3 py-2.5 border rounded-r-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono ${errors.slug ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                     />
                   </div>
-                  {!errors.slug && <p className="text-xs text-gray-400 mt-1">Küçük harf, rakam ve tire. Bu kod değiştirilemez.</p>}
+                  {!errors.slug && <p className="text-xs text-gray-400 mt-1">{t('subscribe.companySlugHint')}</p>}
                   {errors.slug && <p className="text-xs text-red-500 mt-1">{errors.slug.message}</p>}
                 </div>
               </div>
@@ -176,14 +197,62 @@ export default function SubscribePage() {
             {/* Admin user info */}
             <div>
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Yönetici Hesabı
+                {t('subscribe.adminSection')}
               </div>
               <div className="space-y-3">
-                {field('Ad Soyad *', 'adminName', 'text', 'Ahmet Yılmaz')}
-                {field('E-posta *', 'adminEmail', 'email', 'ahmet@acme.com')}
-                {field('Şifre *', 'adminPassword', 'password', 'En az 8 karakter')}
-                {field('Şifre Tekrar *', 'confirmPassword', 'password', 'Şifreyi tekrar girin')}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subscribe.adminName')} *</label>
+                  <input
+                    type="text"
+                    placeholder={t('subscribe.adminNamePlaceholder')}
+                    {...register('adminName')}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.adminName ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  />
+                  {errors.adminName && <p className="text-xs text-red-500 mt-1">{errors.adminName.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subscribe.adminEmail')} *</label>
+                  <input
+                    type="email"
+                    placeholder={t('subscribe.adminEmailPlaceholder')}
+                    {...register('adminEmail')}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.adminEmail ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  />
+                  {errors.adminEmail && <p className="text-xs text-red-500 mt-1">{errors.adminEmail.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subscribe.adminPassword')} *</label>
+                  <input
+                    type="password"
+                    placeholder={t('subscribe.adminPasswordPlaceholder')}
+                    {...register('adminPassword')}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.adminPassword ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  />
+                  {errors.adminPassword && <p className="text-xs text-red-500 mt-1">{errors.adminPassword.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subscribe.confirmPassword')} *</label>
+                  <input
+                    type="password"
+                    placeholder={t('subscribe.confirmPasswordPlaceholder')}
+                    {...register('confirmPassword')}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.confirmPassword ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  />
+                  {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword.message}</p>}
+                </div>
               </div>
+            </div>
+
+            {/* reCAPTCHA */}
+            <div className="flex flex-col items-center gap-1 py-1">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={() => setCaptchaError('')}
+              />
+              {captchaError && (
+                <p className="text-xs text-red-500 self-start">{captchaError}</p>
+              )}
             </div>
 
             {serverError && (
@@ -197,12 +266,12 @@ export default function SubscribePage() {
               disabled={isSubmitting}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl text-sm transition-colors"
             >
-              {isSubmitting ? 'Hesap Oluşturuluyor...' : 'Ücretsiz Hesap Oluştur'}
+              {isSubmitting ? t('subscribe.submitting') : t('subscribe.submit')}
             </button>
 
             <p className="text-center text-xs text-gray-400">
-              Zaten hesabınız var mı?{' '}
-              <Link to="/login" className="text-blue-600 hover:underline font-medium">Giriş Yap</Link>
+              {t('subscribe.alreadyHaveAccount')}{' '}
+              <Link to="/login" className="text-blue-600 hover:underline font-medium">{t('subscribe.signIn')}</Link>
             </p>
           </form>
         </div>

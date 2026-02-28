@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Upload, ImageOff, Zap, CheckCircle, Globe, Mail, Phone, MapPin, Building2, Hash, Sparkles } from 'lucide-react';
+import { Upload, ImageOff, Zap, CheckCircle, Globe, Mail, Phone, MapPin, Building2, Hash, Sparkles, Link2, Copy, Check } from 'lucide-react';
 import { getOwnCompany, uploadLogo, updateOwnCompany } from '@/api/companies';
 import type { CompanySelfUpdate } from '@/api/companies';
 import { useAuthStore } from '@/store/auth.store';
@@ -37,6 +37,18 @@ export default function CompanyProfileTab() {
   const { user: me } = useAuthStore();
   const logoFileRef = useRef<HTMLInputElement>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  const complaintUrl = company?.slug
+    ? `${window.location.origin}/complaint/${company.slug}`
+    : null;
+
+  function copyComplaintUrl() {
+    if (!complaintUrl) return;
+    navigator.clipboard.writeText(complaintUrl);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
+  }
 
   const { data: company, isLoading } = useQuery({
     queryKey: ['own-company'],
@@ -153,6 +165,44 @@ export default function CompanyProfileTab() {
           )}
         </div>
       </div>
+
+      {/* ── Müşteri Şikayet Formu Linki ──────────────────── */}
+      {complaintUrl && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1.5">
+            <Link2 className="w-3.5 h-3.5 text-blue-500" />
+            Müşteri Şikayet / Geri Bildirim Formu
+          </h3>
+          <p className="text-xs text-gray-400 mb-3">
+            Bu linki müşterilerinizle paylaşın — giriş yapmadan şikayet ve geri bildirim gönderebilirler.
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 min-w-0">
+              <p className="text-xs text-gray-700 font-mono truncate">{complaintUrl}</p>
+            </div>
+            <button
+              type="button"
+              onClick={copyComplaintUrl}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors shrink-0"
+            >
+              {urlCopied
+                ? <><Check className="w-3.5 h-3.5" /> Kopyalandı</>
+                : <><Copy className="w-3.5 h-3.5" /> Kopyala</>
+              }
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            <a
+              href={complaintUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline"
+            >
+              Önizleme için tıklayın →
+            </a>
+          </p>
+        </div>
+      )}
 
       {/* ── Company Info Form ────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">

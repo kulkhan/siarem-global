@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ComplaintStatus, ComplaintType } from '@prisma/client';
 import * as svc from '../services/complaints.service';
+import { verifyRecaptcha } from '../lib/recaptcha';
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
@@ -52,7 +53,12 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 // Public endpoint — no auth required
 export async function publicCreate(req: Request, res: Response, next: NextFunction) {
   try {
-    const { companySlug, type, ...body } = req.body as { companySlug: string; subject: string; description: string; type?: string; contactName?: string; contactEmail?: string };
+    const { companySlug, type, recaptchaToken, ...body } = req.body as { companySlug: string; subject: string; description: string; type?: string; contactName?: string; contactEmail?: string; recaptchaToken?: string };
+
+    const captchaOk = await verifyRecaptcha(recaptchaToken ?? '');
+    if (!captchaOk) {
+      return res.status(400).json({ success: false, message: 'CAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.' });
+    }
     const { prisma } = await import('../lib/prisma');
     const company = await prisma.company.findFirst({
       where: { OR: [{ slug: companySlug }, { domain: companySlug }], isActive: true },

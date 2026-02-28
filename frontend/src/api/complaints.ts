@@ -43,6 +43,7 @@ export function submitPublicComplaint(data: {
   type?: ComplaintType;
   contactName?: string;
   contactEmail?: string;
+  recaptchaToken?: string;
 }) {
   return axios.post('/api/complaints/public', data);
 }

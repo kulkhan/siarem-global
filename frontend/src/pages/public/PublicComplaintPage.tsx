@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { MessageSquare, CheckCircle } from 'lucide-react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { submitPublicComplaint, type ComplaintType } from '@/api/complaints';
+
+// Google reCAPTCHA v2 — test site key (always passes). Replace via VITE_RECAPTCHA_SITE_KEY in production.
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MuLw16k3';
 
 const schema = z.object({
   contactName: z.string().min(1, 'Ad Soyad zorunludur'),
@@ -20,6 +24,8 @@ export default function PublicComplaintPage() {
   const { slug } = useParams<{ slug: string }>();
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [captchaError, setCaptchaError] = useState('');
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const {
     register,
@@ -32,6 +38,14 @@ export default function PublicComplaintPage() {
 
   async function onSubmit(data: FormData) {
     setServerError('');
+    setCaptchaError('');
+
+    const recaptchaToken = recaptchaRef.current?.getValue();
+    if (!recaptchaToken) {
+      setCaptchaError('Lütfen CAPTCHA doğrulamasını tamamlayın.');
+      return;
+    }
+
     try {
       await submitPublicComplaint({
         companySlug: slug ?? '',
@@ -40,9 +54,11 @@ export default function PublicComplaintPage() {
         type: data.type as ComplaintType,
         contactName: data.contactName || undefined,
         contactEmail: data.contactEmail || undefined,
+        recaptchaToken,
       });
       setSubmitted(true);
     } catch (err: unknown) {
+      recaptchaRef.current?.reset();
       const apiError = err as { response?: { data?: { message?: string } } };
       setServerError(apiError?.response?.data?.message ?? 'Bir hata oluştu. Lütfen tekrar deneyin.');
     }
@@ -159,6 +175,18 @@ export default function PublicComplaintPage() {
               />
               {errors.description && (
                 <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>
+              )}
+            </div>
+
+            {/* reCAPTCHA */}
+            <div className="flex flex-col items-center gap-1">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={() => setCaptchaError('')}
+              />
+              {captchaError && (
+                <p className="text-xs text-red-500 self-start">{captchaError}</p>
               )}
             </div>
 

@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X } from 'lucide-react';
+import { X, Link2, Copy, Check } from 'lucide-react';
 import { DataGrid, type Column } from '@/components/shared/DataGrid';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { complaintsApi, type Complaint, type ComplaintStatus, type ComplaintType } from '@/api/complaints';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import ComplaintFormDialog from './ComplaintFormDialog';
+import { useAuthStore } from '@/store/auth.store';
+import { getOwnCompany } from '@/api/companies';
 
 // ── Status config ──────────────────────────────────────────────────────────────
 
@@ -120,6 +122,27 @@ type DialogMode = 'add' | 'edit' | null;
 
 export default function ComplaintsPage() {
   const qc = useQueryClient();
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+  const { data: ownCompany } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    enabled: !isSuperAdmin && !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [urlCopied, setUrlCopied] = useState(false);
+  const complaintUrl = ownCompany?.slug
+    ? `${window.location.origin}/complaint/${ownCompany.slug}`
+    : null;
+
+  function copyComplaintUrl() {
+    if (!complaintUrl) return;
+    navigator.clipboard.writeText(complaintUrl);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
+  }
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -203,6 +226,34 @@ export default function ComplaintsPage() {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
       />
+
+      {/* Müşteri şikayet formu linki */}
+      {complaintUrl && (
+        <div className="flex items-center gap-3 mb-4 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+          <Link2 className="w-4 h-4 text-blue-500 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-medium text-blue-700">Müşteri Formu: </span>
+            <a
+              href={complaintUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:underline font-mono truncate"
+            >
+              {complaintUrl}
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={copyComplaintUrl}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors shrink-0"
+          >
+            {urlCopied
+              ? <><Check className="w-3 h-3" /> Kopyalandı</>
+              : <><Copy className="w-3 h-3" /> Kopyala</>
+            }
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">

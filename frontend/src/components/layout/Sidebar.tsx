@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  LayoutDashboard, Building2, Ship, Wrench, FileText,
+  LayoutDashboard, Building2, Wrench, FileText,
   Receipt, CalendarDays, FolderOpen, BarChart3, Settings,
   LogOut, Anchor, ChevronLeft, ChevronRight, Wallet, Globe, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
-import { useQueryClient } from '@tanstack/react-query';
+import { getOwnCompany } from '@/api/companies';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -18,7 +19,6 @@ const navItems = [
   { key: 'dashboard', path: '/dashboard', icon: LayoutDashboard },
   { key: 'customers', path: '/customers', icon: Building2 },
   { key: 'quotes', path: '/quotes', icon: FileText },
-  /*{ key: 'ships', path: '/ships', icon: Ship },*/
   { key: 'services', path: '/services', icon: Wrench },
   { key: 'invoices', path: '/invoices', icon: Receipt },
   { key: 'meetings', path: '/meetings', icon: CalendarDays },
@@ -36,6 +36,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
+  const { data: ownCompany } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    enabled: !isSuperAdmin && !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
   function handleLogout() {
     qc.clear();
     clearAuth();
@@ -50,11 +57,26 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      {/* Logo */}
+      {/* Top: Company logo or app brand */}
       <div className="flex items-center h-16 px-4 border-b border-sidebar-border shrink-0">
-        <Anchor className="w-7 h-7 text-blue-400 shrink-0" />
-        {!collapsed && (
-          <span className="ml-2.5 text-lg font-bold text-white truncate">oddyCRM</span>
+        {!isSuperAdmin && ownCompany?.logoUrl ? (
+          <img
+            src={ownCompany.logoUrl}
+            alt={ownCompany.name}
+            className={cn(
+              'object-contain rounded shrink-0',
+              collapsed ? 'w-8 h-8' : 'h-9 max-w-[144px]'
+            )}
+          />
+        ) : (
+          <>
+            <Anchor className="w-7 h-7 text-blue-400 shrink-0" />
+            {!collapsed && (
+              <span className="ml-2.5 text-lg font-bold text-white truncate">
+                {!isSuperAdmin && ownCompany ? ownCompany.name : 'oddyCRM'}
+              </span>
+            )}
+          </>
         )}
         <button
           onClick={onToggle}
@@ -120,7 +142,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* User section */}
-      <div className="px-2 pb-4 border-t border-sidebar-border pt-3 shrink-0">
+      <div className="px-2 pb-2 border-t border-sidebar-border pt-3 shrink-0">
         {!collapsed && (
           <div className="px-3 py-2 mb-1">
             <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
@@ -142,6 +164,30 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span>{t('common.logout')}</span>}
         </button>
+      </div>
+
+      {/* App branding strip */}
+      <div
+        className={cn(
+          'shrink-0 border-t border-white/5 bg-gradient-to-r from-blue-950/60 to-indigo-950/60',
+          collapsed ? 'py-3 flex justify-center' : 'px-4 py-3'
+        )}
+      >
+        {collapsed ? (
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40">
+            <Anchor className="w-4 h-4 text-white" />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/40">
+              <Anchor className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white/80 leading-none tracking-wide">oddyCRM</p>
+              <p className="text-[10px] text-white/35 leading-none mt-0.5 tracking-widest uppercase">Maritime Suite</p>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
