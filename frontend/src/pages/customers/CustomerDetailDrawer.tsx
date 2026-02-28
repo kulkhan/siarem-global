@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { X, Plus, Pencil, Trash2, Star, Phone, Mail, User, UserPlus, UserMinus } from 'lucide-react';
-import { customersApi } from '@/api/customers';
+import { X, Plus, Pencil, Trash2, Star, Phone, Mail, User, UserPlus, UserMinus, Building2 } from 'lucide-react';
+import { customersApi, type BankAccount } from '@/api/customers';
 import { contactsApi, type Contact } from '@/api/contacts';
 import { usersApi } from '@/api/users';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+interface BankFormState {
+  bankName: string;
+  iban: string;
+  accountNo: string;
+  currency: string;
+  notes: string;
+}
+const emptyBankForm: BankFormState = { bankName: '', iban: '', accountNo: '', currency: '', notes: '' };
 
 interface ContactFormState {
   name: string;
@@ -37,6 +46,9 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [deleteContactId, setDeleteContactId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [bankForm, setBankForm] = useState<BankFormState | null>(null);
+  const [editingBankId, setEditingBankId] = useState<string | null>(null);
+  const [deleteBankId, setDeleteBankId] = useState<string | null>(null);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer-detail', customerId],
@@ -53,6 +65,12 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
   const { data: assignees = [] } = useQuery({
     queryKey: ['assignees', customerId],
     queryFn: () => customersApi.getAssignees(customerId).then((r) => r.data.data),
+    enabled: !!customerId,
+  });
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ['bank-accounts', customerId],
+    queryFn: () => customersApi.listBankAccounts(customerId).then((r) => r.data.data),
     enabled: !!customerId,
   });
 
@@ -96,6 +114,27 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['contacts', customerId] });
       setDeleteContactId(null);
+    },
+  });
+
+  const saveBankMutation = useMutation({
+    mutationFn: (form: BankFormState) => {
+      const payload = { bankName: form.bankName, iban: form.iban || undefined, accountNo: form.accountNo || undefined, currency: form.currency || undefined, notes: form.notes || undefined };
+      if (editingBankId) return customersApi.updateBankAccount(customerId, editingBankId, payload);
+      return customersApi.createBankAccount(customerId, payload);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bank-accounts', customerId] });
+      setBankForm(null);
+      setEditingBankId(null);
+    },
+  });
+
+  const deleteBankMutation = useMutation({
+    mutationFn: (id: string) => customersApi.deleteBankAccount(customerId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bank-accounts', customerId] });
+      setDeleteBankId(null);
     },
   });
 
@@ -156,7 +195,11 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
                     {customer.shortCode}
                   </div>
                   <div className="text-lg font-bold text-gray-900">{customer.name}</div>
-                  {customer.country && <div className="text-xs text-gray-500 mt-0.5">{customer.country}</div>}
+                  {(customer.city || customer.country) && (
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {[customer.city, customer.country].filter(Boolean).join(', ')}
+                    </div>
+                  )}
                 </div>
                 <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${customer.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
                   {customer.isActive ? t('status.active') : t('status.passive')}
@@ -253,6 +296,94 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
                           <UserMinus className="w-3 h-3" />
                         </button>
                       )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Bank Accounts section */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  {t('customers.bankAccounts.title')} ({bankAccounts.length})
+                </div>
+                {!bankForm && (
+                  <button
+                    onClick={() => { setBankForm({ ...emptyBankForm }); setEditingBankId(null); }}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {t('customers.bankAccounts.add')}
+                  </button>
+                )}
+              </div>
+
+              {/* Bank form */}
+              {bankForm && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <label className="text-[10px] text-gray-500 mb-0.5 block">{t('customers.bankAccounts.bankName')} *</label>
+                      <Input value={bankForm.bankName} onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })} placeholder="Ziraat Bankası, HSBC..." className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-0.5 block">{t('customers.bankAccounts.iban')}</label>
+                      <Input value={bankForm.iban} onChange={(e) => setBankForm({ ...bankForm, iban: e.target.value })} placeholder="TR00 0000 0000..." className="h-7 text-xs font-mono" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-0.5 block">{t('customers.bankAccounts.accountNo')}</label>
+                      <Input value={bankForm.accountNo} onChange={(e) => setBankForm({ ...bankForm, accountNo: e.target.value })} placeholder="12345678" className="h-7 text-xs font-mono" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-0.5 block">{t('customers.bankAccounts.currency')}</label>
+                      <Input value={bankForm.currency} onChange={(e) => setBankForm({ ...bankForm, currency: e.target.value })} placeholder="EUR, USD, TRY" className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 mb-0.5 block">{t('customers.bankAccounts.notes')}</label>
+                      <Input value={bankForm.notes} onChange={(e) => setBankForm({ ...bankForm, notes: e.target.value })} placeholder="Not..." className="h-7 text-xs" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" onClick={() => bankForm.bankName.trim() && saveBankMutation.mutate(bankForm)} disabled={saveBankMutation.isPending || !bankForm.bankName.trim()} className="h-7 text-xs">
+                      {saveBankMutation.isPending ? t('common.saving') : t('common.save')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setBankForm(null); setEditingBankId(null); }} className="h-7 text-xs">
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {bankAccounts.length === 0 && !bankForm ? (
+                <div className="text-xs text-gray-400 py-2 text-center">{t('customers.bankAccounts.noAccounts')}</div>
+              ) : (
+                <div className="space-y-2">
+                  {bankAccounts.map((ba: BankAccount) => (
+                    <div key={ba.id} className="group flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-100 hover:border-gray-200 hover:bg-gray-50/50">
+                      <Building2 className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-800">{ba.bankName}</div>
+                        {ba.iban && <div className="text-xs font-mono text-gray-500 mt-0.5">{ba.iban}</div>}
+                        <div className="flex gap-3 mt-0.5">
+                          {ba.accountNo && <span className="text-xs font-mono text-gray-400">{ba.accountNo}</span>}
+                          {ba.currency && <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{ba.currency}</span>}
+                        </div>
+                        {ba.notes && <div className="text-xs text-gray-400 italic mt-0.5">{ba.notes}</div>}
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        {deleteBankId === ba.id ? (
+                          <>
+                            <button onClick={() => deleteBankMutation.mutate(ba.id)} className="text-[10px] text-red-600 font-medium hover:text-red-700 px-1.5 py-0.5 bg-red-50 rounded">{t('common.confirm')}</button>
+                            <button onClick={() => setDeleteBankId(null)} className="text-[10px] text-gray-500 px-1.5 py-0.5">{t('common.cancel')}</button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => { setEditingBankId(ba.id); setBankForm({ bankName: ba.bankName, iban: ba.iban ?? '', accountNo: ba.accountNo ?? '', currency: ba.currency ?? '', notes: ba.notes ?? '' }); }} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"><Pencil className="w-3 h-3" /></button>
+                            <button onClick={() => setDeleteBankId(ba.id)} className="p-1 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

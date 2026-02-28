@@ -1,5 +1,16 @@
 import api from '@/lib/api';
 
+export interface BankAccount {
+  id: string;
+  customerId: string;
+  bankName: string;
+  iban?: string;
+  accountNo?: string;
+  currency?: string;
+  notes?: string;
+  sortOrder: number;
+}
+
 export interface Customer {
   id: string;
   shortCode: string;
@@ -7,12 +18,14 @@ export interface Customer {
   email?: string;
   phone?: string;
   address?: string;
+  city?: string;
   country?: string;
   taxNumber?: string;
   notes?: string;
   isActive: boolean;
   createdAt: string;
   _count?: { ships: number };
+  bankAccounts?: BankAccount[];
 }
 
 export interface CustomerListParams {
@@ -59,6 +72,18 @@ export const customersApi = {
 
   removeAssignee: (customerId: string, userId: string) =>
     api.delete(`/customers/${customerId}/assignees/${userId}`),
+
+  listBankAccounts: (customerId: string) =>
+    api.get<{ success: boolean; data: BankAccount[] }>(`/customers/${customerId}/bank-accounts`),
+
+  createBankAccount: (customerId: string, data: Partial<BankAccount>) =>
+    api.post<{ success: boolean; data: BankAccount }>(`/customers/${customerId}/bank-accounts`, data),
+
+  updateBankAccount: (customerId: string, bankId: string, data: Partial<BankAccount>) =>
+    api.put<{ success: boolean; data: BankAccount }>(`/customers/${customerId}/bank-accounts/${bankId}`, data),
+
+  deleteBankAccount: (customerId: string, bankId: string) =>
+    api.delete(`/customers/${customerId}/bank-accounts/${bankId}`),
 };
 
 export interface Assignee {

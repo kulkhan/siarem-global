@@ -196,6 +196,7 @@
       "email": "E-posta",
       "phone": "Telefon",
       "address": "Adres",
+      "city": "Şehir",
       "country": "Ülke",
       "taxNumber": "Vergi No",
       "notes": "Notlar",
@@ -212,6 +213,16 @@
       "select": "Temsilci seçin...",
       "none": "Henüz temsilci atanmadı",
       "remove": "Temsilciyi kaldır"
+    },
+    "bankAccounts": {
+      "title": "Banka Hesapları",
+      "add": "Hesap Ekle",
+      "noAccounts": "Banka hesabı eklenmemiş",
+      "bankName": "Banka Adı",
+      "iban": "IBAN",
+      "accountNo": "Hesap No",
+      "currency": "Para Birimi",
+      "notes": "Notlar"
     }
   },
   "services": {

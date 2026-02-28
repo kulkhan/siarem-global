@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
-import { loginUser, getCurrentUser } from '../services/auth.service';
+import { loginUser, getCurrentUser, registerTenant } from '../services/auth.service';
+import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 
 export const loginValidation = [
@@ -16,21 +17,62 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   }
 
   try {
-    // Determine tenant from X-Tenant-Domain header
-    const tenantDomain = req.headers['x-tenant-domain'] as string | undefined;
+    const { tenantSlug } = req.body as { tenantSlug?: string };
     let companyId: string | null = null;
 
-    if (tenantDomain && tenantDomain !== env.adminDomain) {
-      // req.tenant is set by tenant middleware for non-admin domains
-      companyId = req.tenant?.id ?? null;
-      if (!companyId) {
-        res.status(404).json({ success: false, message: 'Tenant bulunamadı' });
-        return;
+    if (tenantSlug !== undefined) {
+      // Explicit slug from general/main domain login form
+      if (tenantSlug === '') {
+        // Empty slug → SUPER_ADMIN login (companyId stays null)
+        companyId = null;
+      } else {
+        const company = await prisma.company.findUnique({
+          where: { slug: tenantSlug },
+          select: { id: true, isActive: true },
+        });
+        if (!company || !company.isActive) {
+          res.status(404).json({ success: false, message: 'Firma bulunamadı. Lütfen firma kodunu kontrol edin.' });
+          return;
+        }
+        companyId = company.id;
+      }
+    } else {
+      // No slug in body → use domain-resolved tenant
+      const tenantDomain = req.headers['x-tenant-domain'] as string | undefined;
+      if (tenantDomain && tenantDomain !== env.adminDomain) {
+        companyId = req.tenant?.id ?? null;
+        if (!companyId) {
+          res.status(404).json({ success: false, message: 'Tenant bulunamadı' });
+          return;
+        }
       }
     }
 
     const result = await loginUser(req.body.email, req.body.password, companyId);
     res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { companyName, slug, adminName, adminEmail, adminPassword } = req.body as {
+      companyName?: string; slug?: string; adminName?: string; adminEmail?: string; adminPassword?: string;
+    };
+
+    if (!companyName || !slug || !adminName || !adminEmail || !adminPassword) {
+      res.status(400).json({ success: false, message: 'Tüm alanlar zorunludur' });
+      return;
+    }
+
+    if (adminPassword.length < 8) {
+      res.status(400).json({ success: false, message: 'Şifre en az 8 karakter olmalıdır' });
+      return;
+    }
+
+    const result = await registerTenant({ companyName, slug, adminName, adminEmail, adminPassword });
+    res.status(201).json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

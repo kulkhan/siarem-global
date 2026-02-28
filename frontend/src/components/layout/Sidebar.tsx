@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -31,8 +32,14 @@ const navItems = [
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { t } = useTranslation();
   const { user, clearAuth } = useAuthStore();
+  const qc = useQueryClient();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+  function handleLogout() {
+    qc.clear();
+    clearAuth();
+  }
 
   const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
@@ -124,7 +131,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           </div>
         )}
         <button
-          onClick={clearAuth}
+          onClick={handleLogout}
           className={cn(
             'flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium',
             'text-sidebar-foreground/70 hover:bg-white/10 hover:text-white transition-colors',

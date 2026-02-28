@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useTenantStore } from '@/store/tenant.store';
-import { getCompanies } from '@/api/companies';
+import { getCompanies, getOwnCompany } from '@/api/companies';
 import { useDarkMode } from '@/hooks/useDarkMode';
 
 const routeTitles: Record<string, string> = {
@@ -37,6 +37,13 @@ export default function Header() {
     enabled: isSuperAdmin,
   });
 
+  const { data: ownCompany } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    enabled: !isSuperAdmin && !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const currentKey = routeTitles[location.pathname] || 'nav.dashboard';
 
   const toggleLang = () => {
@@ -51,6 +58,10 @@ export default function Header() {
 
   return (
     <header className="flex items-center h-16 px-6 bg-card border-b border-border shrink-0 gap-4">
+      {/* Company logo for non-SUPER_ADMIN */}
+      {!isSuperAdmin && ownCompany?.logoUrl && (
+        <img src={ownCompany.logoUrl} alt={ownCompany.name} className="h-7 w-auto object-contain shrink-0 rounded" />
+      )}
       <h1 className="text-lg font-semibold text-foreground flex-1">{t(currentKey)}</h1>
 
       {/* SUPER_ADMIN tenant selector */}

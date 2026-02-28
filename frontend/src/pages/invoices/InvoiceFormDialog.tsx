@@ -165,7 +165,7 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
     if (items.length === 0) return;
     const currencies = [...new Set(items.map((it) => it.currency).filter(Boolean))];
     if (currencies.length === 1) {
-      const total = items.reduce((sum, it) => sum + (Number(it.total) || 0), 0);
+      const total = items.reduce((sum, it) => sum + (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0), 0);
       setValue('amount', total);
       setValue('currency', currencies[0] as 'EUR' | 'USD' | 'TRY');
     }
@@ -348,10 +348,11 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
 
         {/* Section 5: Items */}
         {(() => {
-          // Tally by currency
+          // Tally by currency — computed from qty*unitPrice for real-time update
           const tally = (watchedItems ?? []).reduce<Record<string, number>>((acc, it) => {
             const cur = it.currency || 'EUR';
-            acc[cur] = (acc[cur] ?? 0) + (Number(it.total) || 0);
+            const lineTotal = (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0);
+            acc[cur] = (acc[cur] ?? 0) + lineTotal;
             return acc;
           }, {});
           const tallyCurrencies = Object.keys(tally);
@@ -416,7 +417,10 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
                                 {...register(`items.${index}.quantity`)}
                                 type="number" step="0.0001" min="0"
                                 className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 text-right"
-                                onBlur={() => recalcTotal(index)}
+                                onChange={(e) => {
+                                  setValue(`items.${index}.quantity`, Number(e.target.value));
+                                  recalcTotal(index);
+                                }}
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -424,7 +428,10 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
                                 {...register(`items.${index}.unitPrice`)}
                                 type="number" step="0.01" min="0"
                                 className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 text-right"
-                                onBlur={() => recalcTotal(index)}
+                                onChange={(e) => {
+                                  setValue(`items.${index}.unitPrice`, Number(e.target.value));
+                                  recalcTotal(index);
+                                }}
                               />
                             </td>
                             <td className="px-2 py-1.5">
@@ -438,7 +445,7 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
                               </select>
                             </td>
                             <td className="px-2 py-1.5 text-right text-gray-700 font-medium">
-                              {(watchedItems[index]?.total ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                              {((Number(watchedItems[index]?.quantity) || 0) * (Number(watchedItems[index]?.unitPrice) || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-1 py-1.5">
                               <button type="button" onClick={() => remove(index)} className="text-gray-300 hover:text-red-500">

@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { X, Ship, User, CheckCircle2, Circle, FileText, Send, CreditCard, ClipboardCheck } from 'lucide-react';
+import { X, Ship, User, CheckCircle2, Circle, FileText, Send, CreditCard, ClipboardCheck, Printer } from 'lucide-react';
 import { servicesApi, type ServiceInvoice, type ServiceLog } from '@/api/services';
+import { getOwnCompany } from '@/api/companies';
+import { printService } from '@/utils/printDocument';
 
 // ── Billing pipeline ─────────────────────────────────────────────────────────
 
@@ -202,6 +204,12 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
     enabled: !!serviceId,
   });
 
+  const { data: ownCompany } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const svc = res;
 
   return (
@@ -218,6 +226,14 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50 shrink-0">
           <h2 className="text-base font-semibold text-gray-800">{t('services.detail')}</h2>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => svc && printService(svc as Parameters<typeof printService>[0], ownCompany, lang)}
+              disabled={!svc}
+              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              title="PDF / Yazdır"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
             <button
               onClick={onEdit}
               className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium text-gray-700"

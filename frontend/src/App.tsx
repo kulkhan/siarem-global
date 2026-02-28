@@ -16,6 +16,8 @@ import SettingsPage from '@/pages/settings/SettingsPage';
 import CompaniesPage from '@/pages/admin/CompaniesPage';
 import ComplaintsPage from '@/pages/complaints/ComplaintsPage';
 import PublicComplaintPage from '@/pages/public/PublicComplaintPage';
+import LandingPage from '@/pages/public/LandingPage';
+import SubscribePage from '@/pages/public/SubscribePage';
 import { useAuthStore } from '@/store/auth.store';
 
 const queryClient = new QueryClient({
@@ -44,15 +46,23 @@ function SuperAdminOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Redirect authenticated users away from public pages
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore();
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/subscribe" element={<PublicRoute><SubscribePage /></PublicRoute>} />
           <Route path="/complaint/:slug" element={<PublicComplaintPage />} />
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/customers/*" element={<CustomersPage />} />
             <Route path="/ships/*" element={<ShipsPage />} />
@@ -67,7 +77,7 @@ export default function App() {
             <Route path="/settings/*" element={<AdminOnly><SettingsPage /></AdminOnly>} />
             <Route path="/admin/companies" element={<SuperAdminOnly><CompaniesPage /></SuperAdminOnly>} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

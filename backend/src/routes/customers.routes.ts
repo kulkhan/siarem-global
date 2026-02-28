@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
-import { list, getOne, create, update, remove, countryOptions } from '../controllers/customers.controller';
+import {
+  list, getOne, create, update, remove, countryOptions,
+  listBankAccounts, createBankAccountHandler, updateBankAccountHandler, deleteBankAccountHandler,
+} from '../controllers/customers.controller';
 import contactsRoutes from './contacts.routes';
 import { Request, Response, NextFunction } from 'express';
 import { getAssignees, addAssignee, removeAssignee } from '../services/customerAssignees.service';
@@ -40,5 +43,11 @@ router.delete('/:customerId/assignees/:userId', requireRole('ADMIN', 'MANAGER'),
     res.json({ success: true });
   } catch (err) { next(err); }
 });
+
+// Bank accounts: /customers/:customerId/bank-accounts
+router.get('/:customerId/bank-accounts', listBankAccounts);
+router.post('/:customerId/bank-accounts', requireRole('ADMIN', 'MANAGER'), createBankAccountHandler);
+router.put('/:customerId/bank-accounts/:bankId', requireRole('ADMIN', 'MANAGER'), updateBankAccountHandler);
+router.delete('/:customerId/bank-accounts/:bankId', requireRole('ADMIN', 'MANAGER'), deleteBankAccountHandler);
 
 export default router;

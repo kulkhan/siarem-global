@@ -16,6 +16,25 @@ export interface CompanyUpdateData {
   plan?: string;
   logoUrl?: string;
   isActive?: boolean;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  taxNumber?: string;
+  website?: string;
+}
+
+// Fields an ADMIN can self-update (excludes slug/domain/plan/isActive)
+export interface CompanySelfUpdateData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  taxNumber?: string;
+  website?: string;
 }
 
 export async function getCompanies() {

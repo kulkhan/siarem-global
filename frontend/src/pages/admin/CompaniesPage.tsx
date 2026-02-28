@@ -63,7 +63,11 @@ export default function CompaniesPage() {
                 <tr key={company.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-blue-500 shrink-0" />
+                      {company.logoUrl ? (
+                        <img src={company.logoUrl} alt="" className="w-6 h-6 object-contain rounded shrink-0" />
+                      ) : (
+                        <Globe className="w-4 h-4 text-blue-500 shrink-0" />
+                      )}
                       <span className="font-medium text-gray-900">{company.name}</span>
                     </div>
                   </td>

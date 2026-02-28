@@ -231,7 +231,7 @@ export default function InvoicesPage() {
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder={t('invoices.filter.search')}
-            className="h-9 pl-3 pr-8 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/40 w-64"
+            className="h-9 pl-3 pr-8 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 w-64"
           />
           {search && (
             <button

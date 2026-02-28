@@ -10,6 +10,13 @@ export interface Company {
   isActive: boolean;
   plan: string | null;
   logoUrl: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
+  taxNumber: string | null;
+  website: string | null;
   createdAt: string;
   updatedAt: string;
 }

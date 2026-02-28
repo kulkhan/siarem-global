@@ -322,6 +322,17 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
         </FormSection>
 
         {/* Section 5: Items */}
+        {(() => {
+          // Tally by currency — computed live from qty*unitPrice
+          const tally = (watchedItems ?? []).reduce<Record<string, number>>((acc, it) => {
+            const cur = it.currency || 'USD';
+            const lineTotal = (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0);
+            acc[cur] = (acc[cur] ?? 0) + lineTotal;
+            return acc;
+          }, {});
+          const tallyCurrencies = Object.keys(tally);
+
+          return (
         <div className="mt-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-gray-700">Kalemler</h3>
@@ -380,7 +391,10 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                             {...register(`items.${index}.quantity`)}
                             type="number" step="0.0001" min="0"
                             className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 text-right"
-                            onBlur={() => recalcTotal(index)}
+                            onChange={(e) => {
+                              setValue(`items.${index}.quantity`, Number(e.target.value));
+                              recalcTotal(index);
+                            }}
                           />
                         </td>
                         <td className="px-2 py-1.5">
@@ -388,7 +402,10 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                             {...register(`items.${index}.unitPrice`)}
                             type="number" step="0.01" min="0"
                             className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 text-right"
-                            onBlur={() => recalcTotal(index)}
+                            onChange={(e) => {
+                              setValue(`items.${index}.unitPrice`, Number(e.target.value));
+                              recalcTotal(index);
+                            }}
                           />
                         </td>
                         <td className="px-2 py-1.5">
@@ -402,7 +419,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                           </select>
                         </td>
                         <td className="px-2 py-1.5 text-right text-gray-700 font-medium">
-                          {(watchedItems[index]?.total ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                          {((Number(watchedItems[index]?.quantity) || 0) * (Number(watchedItems[index]?.unitPrice) || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="px-1 py-1.5">
                           <button type="button" onClick={() => remove(index)} className="text-gray-300 hover:text-red-500">
@@ -413,10 +430,27 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                     );
                   })}
                 </tbody>
+                {tallyCurrencies.length > 0 && (
+                  <tfoot className="bg-gray-50 border-t border-gray-200">
+                    <tr>
+                      <td colSpan={5} className="px-3 py-1.5 text-xs text-gray-500 text-right font-medium">
+                        Kalem Toplamı:
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-bold text-gray-800 text-xs">
+                        {tallyCurrencies.map((cur) => (
+                          <div key={cur}>{tally[cur].toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {cur}</div>
+                        ))}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           )}
         </div>
+          );
+        })()}
 
         {saveMutation.isError && (
           <div className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">

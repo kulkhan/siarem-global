@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import {
   getCustomers, getCustomerById, createCustomer,
   updateCustomer, deleteCustomer, getCountryOptions,
+  getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount,
 } from '../services/customers.service';
 import { logAudit } from '../services/audit.service';
 
@@ -65,5 +66,38 @@ export async function countryOptions(req: Request, res: Response, next: NextFunc
     const companyId = req.user?.companyId ?? null;
     const data = await getCountryOptions(companyId);
     res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function listBankAccounts(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId ?? null;
+    const data = await getBankAccounts(req.params.customerId, companyId);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function createBankAccountHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId;
+    if (!companyId) { res.status(403).json({ message: 'No tenant' }); return; }
+    const data = await createBankAccount(req.params.customerId, req.body, companyId);
+    res.status(201).json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function updateBankAccountHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId ?? null;
+    const data = await updateBankAccount(req.params.bankId, req.body, companyId);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function deleteBankAccountHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId ?? null;
+    await deleteBankAccount(req.params.bankId, companyId);
+    res.json({ success: true });
   } catch (err) { next(err); }
 }

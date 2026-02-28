@@ -187,6 +187,7 @@
       "address": "Address",
       "country": "Country",
       "taxNumber": "Tax Number",
+      "city": "City",
       "notes": "Notes",
       "shipCount": "Ships",
       "status": "Status"
@@ -201,6 +202,16 @@
       "select": "Select a user...",
       "none": "No account managers assigned",
       "remove": "Remove assignee"
+    },
+    "bankAccounts": {
+      "title": "Bank Accounts",
+      "add": "Add Account",
+      "noAccounts": "No bank accounts added",
+      "bankName": "Bank Name",
+      "iban": "IBAN",
+      "accountNo": "Account No",
+      "currency": "Currency",
+      "notes": "Notes"
     }
   },
   "services": {

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Ship, FileText, ReceiptText } from 'lucide-react';
+import { X, Ship, FileText, ReceiptText, Printer } from 'lucide-react';
 import { quotesApi } from '@/api/quotes';
+import { getOwnCompany } from '@/api/companies';
+import { printQuote } from '@/utils/printDocument';
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-600',
@@ -45,6 +47,12 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
     enabled: !!quoteId,
   });
 
+  const { data: ownCompany } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const convertMutation = useMutation({
     mutationFn: () => quotesApi.convertToInvoice(quoteId),
     onSuccess: () => {
@@ -78,6 +86,14 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
                 {convertMutation.isPending ? '...' : 'Faturaya Dönüştür'}
               </button>
             )}
+            <button
+              onClick={() => quote && printQuote(quote as Parameters<typeof printQuote>[0], ownCompany, i18n.language)}
+              disabled={!quote}
+              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              title="PDF / Yazdır"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
             <button
               onClick={onEdit}
               className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium text-gray-700"

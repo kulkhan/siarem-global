@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X } from 'lucide-react';
-import { createCompany, updateCompany } from '@/api/companies';
+import { X, Upload, ImageOff } from 'lucide-react';
+import { createCompany, updateCompany, uploadLogo } from '@/api/companies';
 import type { Company } from '@/types';
 import type { CompanyInput } from '@/api/companies';
 
@@ -15,25 +15,43 @@ interface Props {
 export default function CompanyFormDialog({ open, company, onClose }: Props) {
   const qc = useQueryClient();
   const isEdit = !!company;
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CompanyInput>();
 
   useEffect(() => {
     if (open) {
+      setLogoFile(null);
+      setLogoPreview(company?.logoUrl ?? null);
       reset(company ? {
         name: company.name,
         domain: company.domain,
         slug: company.slug,
         plan: company.plan ?? '',
-        logoUrl: company.logoUrl ?? '',
         isActive: company.isActive,
       } : { isActive: true });
     }
   }, [open, company, reset]);
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
+
   const mutation = useMutation({
-    mutationFn: (data: CompanyInput) =>
-      isEdit ? updateCompany(company!.id, data) : createCompany(data),
+    mutationFn: async (data: CompanyInput) => {
+      const saved = isEdit
+        ? await updateCompany(company!.id, data)
+        : await createCompany(data);
+      if (logoFile) {
+        await uploadLogo(saved.id, logoFile);
+      }
+      return saved;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['companies'] });
       onClose();
@@ -56,6 +74,43 @@ export default function CompanyFormDialog({ open, company, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+
+          {/* Logo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-16 h-16 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer"
+                onClick={() => fileRef.current?.click()}
+                title="Logo yükle"
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <ImageOff className="w-6 h-6 text-gray-300" />
+                )}
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {logoPreview ? 'Değiştir' : 'Yükle'}
+                </button>
+                <p className="text-xs text-gray-400 mt-1">PNG, JPG, SVG · max 2MB</p>
+              </div>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Şirket Adı *</label>
             <input

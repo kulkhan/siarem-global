@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-export async function resolveTenant(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function resolveTenant(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const tenantDomain = req.headers['x-tenant-domain'] as string | undefined;
 
   // No header → super admin request or internal call, skip tenant resolution
@@ -46,25 +46,35 @@ export async function resolveTenant(req: Request, res: Response, next: NextFunct
   }
 
   try {
-    const company = await prisma.company.findUnique({
+    // 1) Try exact domain match
+    let company = await prisma.company.findUnique({
       where: { domain: tenantDomain },
       select: { id: true, slug: true, domain: true, name: true, isActive: true },
     });
 
-    if (!company || !company.isActive) {
-      res.status(404).json({ success: false, message: 'Tenant bulunamadı' });
-      return;
+    // 2) Fallback: extract slug from subdomain (e.g. "acme" from "acme.siarem.com")
+    if (!company) {
+      const slug = tenantDomain.split('.')[0];
+      if (slug && slug !== tenantDomain) {
+        company = await prisma.company.findUnique({
+          where: { slug },
+          select: { id: true, slug: true, domain: true, name: true, isActive: true },
+        });
+      }
     }
 
-    req.tenant = {
-      id: company.id,
-      slug: company.slug,
-      domain: company.domain,
-      name: company.name,
-    };
+    if (company && company.isActive) {
+      req.tenant = {
+        id: company.id,
+        slug: company.slug,
+        domain: company.domain,
+        name: company.name,
+      };
+    }
+    // If still not found, proceed — public routes don't need a tenant
 
     next();
   } catch {
-    res.status(500).json({ success: false, message: 'Tenant çözümlenemedi' });
+    next();
   }
 }

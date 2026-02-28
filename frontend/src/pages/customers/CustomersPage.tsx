@@ -124,8 +124,11 @@ export default function CustomersPage() {
       key: 'country',
       label: t('customers.fields.country'),
       sortable: true,
-      width: 'w-28',
-      render: (row) => row.country ?? <span className="text-gray-300">—</span>,
+      width: 'w-36',
+      render: (row) => {
+        const parts = [row.city, row.country].filter(Boolean);
+        return parts.length ? <span>{parts.join(', ')}</span> : <span className="text-gray-300">—</span>;
+      },
     },
     {
       key: 'phone',
@@ -183,7 +186,7 @@ export default function CustomersPage() {
       />
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+      <div className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <Input

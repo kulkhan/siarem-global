@@ -62,6 +62,7 @@ export async function getCustomerById(id: string, companyId: string | null) {
     include: {
       _count: { select: { ships: true, services: true, invoices: true } },
       contacts: { where: { deletedAt: null }, orderBy: { isPrimary: 'desc' } },
+      bankAccounts: { orderBy: { sortOrder: 'asc' } },
       assignees: {
         include: { user: { select: { id: true, name: true, email: true, role: true } } },
         orderBy: { assignedAt: 'asc' },
@@ -79,6 +80,7 @@ export async function createCustomer(
     email?: string;
     phone?: string;
     address?: string;
+    city?: string;
     country?: string;
     taxNumber?: string;
     notes?: string;
@@ -101,6 +103,7 @@ export async function updateCustomer(
     email?: string;
     phone?: string;
     address?: string;
+    city?: string;
     country?: string;
     taxNumber?: string;
     notes?: string;
@@ -137,4 +140,43 @@ export async function getCountryOptions(companyId: string | null) {
     orderBy: { country: 'asc' },
   });
   return rows.map((r) => r.country).filter(Boolean) as string[];
+}
+
+// ── Bank Accounts ─────────────────────────────────────────────────────────────
+
+export async function getBankAccounts(customerId: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  return prisma.customerBankAccount.findMany({
+    where: { customerId, ...tenantFilter },
+    orderBy: { sortOrder: 'asc' },
+  });
+}
+
+export async function createBankAccount(
+  customerId: string,
+  data: { bankName: string; iban?: string; accountNo?: string; currency?: string; notes?: string },
+  companyId: string
+) {
+  const count = await prisma.customerBankAccount.count({ where: { customerId } });
+  return prisma.customerBankAccount.create({
+    data: { ...data, customerId, companyId, sortOrder: count },
+  });
+}
+
+export async function updateBankAccount(
+  id: string,
+  data: { bankName?: string; iban?: string; accountNo?: string; currency?: string; notes?: string },
+  companyId: string | null
+) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.customerBankAccount.findFirst({ where: { id, ...tenantFilter } });
+  if (!existing) throw new AppError('Bank account not found', 404);
+  return prisma.customerBankAccount.update({ where: { id }, data });
+}
+
+export async function deleteBankAccount(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.customerBankAccount.findFirst({ where: { id, ...tenantFilter } });
+  if (!existing) throw new AppError('Bank account not found', 404);
+  return prisma.customerBankAccount.delete({ where: { id } });
 }

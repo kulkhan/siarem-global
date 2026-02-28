@@ -4,6 +4,48 @@ import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 import { AppError } from '../middleware/error.middleware';
 
+export interface RegisterTenantData {
+  companyName: string;
+  slug: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+}
+
+export async function registerTenant(data: RegisterTenantData) {
+  const slugClean = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!slugClean) throw new AppError('Geçerli bir firma kodu girin', 400);
+
+  const slugExists = await prisma.company.findUnique({ where: { slug: slugClean } });
+  if (slugExists) throw new AppError('Bu firma kodu zaten kullanımda', 400);
+
+  const emailExists = await prisma.user.findFirst({ where: { email: data.adminEmail } });
+  if (emailExists) throw new AppError('Bu e-posta adresi zaten kayıtlı', 400);
+
+  const domain = `${slugClean}.siarem.com`;
+  const domainExists = await prisma.company.findUnique({ where: { domain } });
+  if (domainExists) throw new AppError('Bu domain zaten kullanımda', 400);
+
+  const hashedPw = await bcrypt.hash(data.adminPassword, 10);
+
+  const company = await prisma.company.create({
+    data: { name: data.companyName, slug: slugClean, domain, plan: 'free', isActive: true },
+  });
+
+  await prisma.user.create({
+    data: {
+      name: data.adminName,
+      email: data.adminEmail,
+      password: hashedPw,
+      role: 'ADMIN',
+      companyId: company.id,
+      isActive: true,
+    },
+  });
+
+  return { company: { id: company.id, name: company.name, slug: company.slug, domain: company.domain } };
+}
+
 export async function loginUser(email: string, password: string, companyId: string | null) {
   let user;
 

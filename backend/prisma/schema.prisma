@@ -79,6 +79,14 @@ model Company {
   isActive  Boolean  @default(true)
   plan      String?           // free | starter | pro | enterprise
   logoUrl   String?
+  // Company profile fields
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  taxNumber String?  @map("tax_number")
+  website   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -97,6 +105,7 @@ model Company {
   auditLogs    AuditLog[]
   products     Product[]
   complaints   Complaint[]
+  bankAccounts CustomerBankAccount[]
 
   @@map("companies")
 }
@@ -147,6 +156,7 @@ model Customer {
   email       String?
   phone       String?
   address     String?
+  city        String?
   country     String?
   taxNumber   String?
   notes       String?
@@ -158,21 +168,41 @@ model Customer {
   deletedAt   DateTime?
   deletedById String?
 
-  company    Company            @relation(fields: [companyId], references: [id])
-  contacts   Contact[]
-  ships      Ship[]
-  services   Service[]
-  quotes     Quote[]
-  invoices   Invoice[]
-  meetings   Meeting[]
-  documents  Document[]
-  expenses   Expense[]
-  complaints Complaint[]
-  createdBy  User?              @relation("CustomerCreatedBy", fields: [createdById], references: [id])
-  assignees  CustomerAssignee[]
+  company      Company                @relation(fields: [companyId], references: [id])
+  contacts     Contact[]
+  ships        Ship[]
+  services     Service[]
+  quotes       Quote[]
+  invoices     Invoice[]
+  meetings     Meeting[]
+  documents    Document[]
+  expenses     Expense[]
+  complaints   Complaint[]
+  bankAccounts CustomerBankAccount[]
+  createdBy    User?                  @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  assignees    CustomerAssignee[]
 
   @@unique([companyId, shortCode])
   @@map("customers")
+}
+
+model CustomerBankAccount {
+  id         String   @id @default(cuid())
+  companyId  String   @map("company_id")
+  customerId String   @map("customer_id")
+  bankName   String   @map("bank_name")
+  iban       String?
+  accountNo  String?  @map("account_no")
+  currency   String?
+  notes      String?
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  company  Company  @relation(fields: [companyId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_bank_accounts")
 }
 
 model Contact {

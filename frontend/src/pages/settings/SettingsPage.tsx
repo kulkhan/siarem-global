@@ -12,6 +12,7 @@ import ChangePasswordDialog from './ChangePasswordDialog';
 import AuditLogTab from './AuditLogTab';
 import ServiceTypesTab from './ServiceTypesTab';
 import ProductsTab from './ProductsTab';
+import CompanyProfileTab from './CompanyProfileTab';
 import type { User } from '@/types';
 
 const ROLE_BADGE: Record<string, { label: string; className: string; icon: typeof Shield }> = {
@@ -21,7 +22,7 @@ const ROLE_BADGE: Record<string, { label: string; className: string; icon: typeo
   USER:        { label: 'User',        className: 'bg-gray-100 text-gray-600',     icon: Shield },
 };
 
-type Tab = 'users' | 'service-types' | 'products' | 'audit';
+type Tab = 'users' | 'service-types' | 'products' | 'audit' | 'company';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -68,10 +69,11 @@ export default function SettingsPage() {
 
   const users = data ?? [];
 
-  const tabs: { id: Tab; label: string; icon: typeof Users; adminOnly?: boolean }[] = [
+  const tabs: { id: Tab; label: string; icon: typeof Users; adminOnly?: boolean; superAdminHide?: boolean }[] = [
     { id: 'users', label: t('settings.tabs.users'), icon: Users },
     { id: 'service-types', label: 'Servis Tipleri', icon: Tag, adminOnly: true },
     { id: 'products', label: 'Ürünler', icon: Package, adminOnly: true },
+    { id: 'company', label: 'Firma', icon: Building2, adminOnly: true, superAdminHide: true },
     { id: 'audit', label: t('settings.tabs.audit'), icon: ClipboardList, adminOnly: true },
   ];
 
@@ -93,7 +95,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {tabs.filter((tb) => !tb.adminOnly || isAdmin).map((tb) => {
+        {tabs.filter((tb) => (!tb.adminOnly || isAdmin) && (!tb.superAdminHide || !isSuperAdmin)).map((tb) => {
           const Icon = tb.icon;
           return (
             <button
@@ -246,6 +248,9 @@ export default function SettingsPage() {
 
       {/* Products tab */}
       {tab === 'products' && isAdmin && <ProductsTab />}
+
+      {/* Company tab (ADMIN only, not SUPER_ADMIN) */}
+      {tab === 'company' && isAdmin && !isSuperAdmin && <CompanyProfileTab />}
 
       {/* Audit Log tab */}
       {tab === 'audit' && isAdmin && <AuditLogTab />}

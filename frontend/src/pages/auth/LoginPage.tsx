@@ -1,44 +1,77 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { Anchor, Globe, Eye, EyeOff } from 'lucide-react';
+import { Anchor, Globe, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuthStore } from '@/store/auth.store';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
-const loginSchema = z.object({
+// ── Tenant detection ───────────────────────────────────────────────────────────
+const GENERAL_HOSTNAMES = ['localhost', '127.0.0.1', 'siarem.com', 'www.siarem.com', 'siarem.local'];
+
+function isGeneralDomain(): boolean {
+  const h = window.location.hostname;
+  return GENERAL_HOSTNAMES.includes(h) || !h.includes('.');
+}
+
+// ── Schema ─────────────────────────────────────────────────────────────────────
+const schema = z.object({
   email: z.string().min(1, 'emailRequired').email('emailInvalid'),
   password: z.string().min(1, 'passwordRequired'),
+  tenantSlug: z.string().optional(),
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginForm = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuthStore();
+  const qc = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  const onGeneralDomain = isGeneralDomain();
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
+  } = useForm<LoginForm>({ resolver: zodResolver(schema) });
+
+  // Pre-fill slug if redirected from subscribe success page
+  useEffect(() => {
+    const state = location.state as { tenantSlug?: string } | null;
+    if (state?.tenantSlug) {
+      setValue('tenantSlug', state.tenantSlug);
+    }
+  }, [location.state, setValue]);
 
   const onSubmit = async (data: LoginForm) => {
     setServerError('');
     try {
-      const res = await api.post('/auth/login', data);
+      const payload: Record<string, unknown> = {
+        email: data.email,
+        password: data.password,
+      };
+
+      // Send tenantSlug only from general domain (empty string = SUPER_ADMIN)
+      if (onGeneralDomain) {
+        payload.tenantSlug = data.tenantSlug?.trim() ?? '';
+      }
+
+      const res = await api.post('/auth/login', payload);
       const { token, user } = res.data;
+      qc.clear(); // Flush previous user's cached data before setting new auth
       setAuth(token, user);
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
@@ -49,6 +82,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+      {/* Back to landing */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Ana Sayfa
+      </Link>
+
       {/* Language toggle */}
       <button
         onClick={() => i18n.changeLanguage(i18n.language === 'tr' ? 'en' : 'tr')}
@@ -71,6 +113,27 @@ export default function LoginPage() {
 
         <CardContent className="pt-4">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+            {/* Tenant slug — shown only on general/main domain */}
+            {onGeneralDomain && (
+              <div className="space-y-1.5">
+                <Label htmlFor="tenantSlug">
+                  Firma Kodu
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    (Süper Admin için boş bırakın)
+                  </span>
+                </Label>
+                <Input
+                  id="tenantSlug"
+                  type="text"
+                  placeholder="acme"
+                  autoComplete="organization"
+                  {...register('tenantSlug')}
+                  className="font-mono"
+                />
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
@@ -119,6 +182,13 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? t('auth.loggingIn') : t('auth.submit')}
             </Button>
+
+            <p className="text-center text-xs text-muted-foreground pt-1">
+              Henüz hesabınız yok mu?{' '}
+              <Link to="/subscribe" className="text-primary hover:underline font-medium">
+                Ücretsiz Kayıt Ol
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

@@ -181,10 +181,20 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
 
   const quoteOptions = [
     { value: '', label: watchedCustomerId ? '—' : '(önce müşteri seçin)' },
-    ...(quotes?.map((q) => ({
-      value: q.id,
-      label: `${q.quoteNumber} — ${q.status}${q.priceEur != null ? ` (€${q.priceEur?.toLocaleString('tr-TR', { maximumFractionDigits: 0 })})` : ''}`,
-    })) ?? []),
+    ...(quotes
+      ?.filter((q) => {
+        if (q.status === 'CANCELLED') return false;
+        const alreadyInvoiced = (q._count as { invoices?: number } | undefined)?.invoices ?? 0;
+        return alreadyInvoiced === 0;
+      })
+      .map((q) => {
+        const date = q.quoteDate ? new Date(q.quoteDate).toLocaleDateString('tr-TR') : '';
+        const desc = q.notes ? q.notes.slice(0, 40) : '';
+        return {
+          value: q.id,
+          label: [q.quoteNumber, date, desc].filter(Boolean).join(' · '),
+        };
+      }) ?? []),
   ];
 
   return (

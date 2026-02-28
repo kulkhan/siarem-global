@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { X, Ship, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { X, Ship, Trash2, Plus, AlertCircle, Printer } from 'lucide-react';
 import { invoicesApi, type Payment } from '@/api/invoices';
 import { Input } from '@/components/ui/input';
+import { getOwnCompany } from '@/api/companies';
+import { printInvoice } from '@/utils/printDocument';
 
 // ── Status colors ──────────────────────────────────────────────────────────────
 
@@ -56,6 +58,12 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
     queryKey: ['invoice-detail', invoiceId],
     queryFn: () => invoicesApi.getOne(invoiceId).then((r) => r.data.data),
     enabled: !!invoiceId,
+  });
+
+  const { data: ownCompany } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    staleTime: 5 * 60 * 1000,
   });
 
   const deleteMutation = useMutation({
@@ -127,27 +135,35 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
                 className="flex items-center gap-1 px-2.5 py-1.5 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 font-medium"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Sil
+                {t('common.delete')}
               </button>
             )}
             {confirmDelete && (
               <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-md px-2 py-1">
-                <span className="text-xs text-red-700 font-medium">Emin misin?</span>
+                <span className="text-xs text-red-700 font-medium">{t('common.deleteConfirm')}</span>
                 <button
                   onClick={() => deleteMutation.mutate()}
                   disabled={deleteMutation.isPending}
                   className="text-xs text-white bg-red-600 hover:bg-red-700 px-2 py-0.5 rounded"
                 >
-                  Evet
+                  {t('common.yes')}
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
                   className="text-xs text-gray-600 bg-white border border-gray-300 px-2 py-0.5 rounded hover:bg-gray-50"
                 >
-                  Hayır
+                  {t('common.no')}
                 </button>
               </div>
             )}
+            <button
+              onClick={() => inv && printInvoice(inv as Parameters<typeof printInvoice>[0], ownCompany, lang)}
+              disabled={!inv}
+              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              title="PDF / Yazdır"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
             <button
               onClick={onEdit}
               className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium text-gray-700"

@@ -8,15 +8,17 @@ import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
 
-// CORS — allow all *.siarem.local and localhost origins in dev
+// CORS
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // server-to-server or curl
+    // In development, allow all origins
+    if (env.nodeEnv !== 'production') return callback(null, true);
+    // In production: allow only known origins
+    if (!origin) return callback(null, true); // server-to-server / curl
     if (
-      origin.includes('localhost') ||
-      origin.includes('127.0.0.1') ||
-      origin.includes('.siarem.local') ||
-      origin.includes('.siarem.com') ||
+      origin === 'https://siarem.com' ||
+      origin === 'https://www.siarem.com' ||
+      origin.endsWith('.siarem.com') ||
       origin === env.frontendUrl
     ) {
       return callback(null, true);

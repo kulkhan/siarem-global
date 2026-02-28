@@ -65,4 +65,53 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Dark mode: all native selects get themed background/text */
+  .dark select {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+    color-scheme: dark;
+  }
+
+  /* Dark mode: plain inputs (not checkbox/radio) */
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* Dark mode: textareas */
+  .dark textarea {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* Dark mode: override common hardcoded Tailwind light classes */
+  .dark .bg-white {
+    background-color: hsl(var(--card));
+  }
+  .dark .bg-gray-50 {
+    background-color: hsl(var(--muted));
+  }
+  .dark .bg-gray-100 {
+    background-color: hsl(var(--secondary));
+  }
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-gray-300 {
+    border-color: hsl(var(--border));
+  }
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-gray-700 {
+    color: hsl(var(--foreground));
+  }
+  .dark .text-gray-600,
+  .dark .text-gray-500 {
+    color: hsl(var(--muted-foreground));
+  }
+  .dark .text-gray-400,
+  .dark .text-gray-300 {
+    color: hsl(var(--muted-foreground) / 0.7);
+  }
 }

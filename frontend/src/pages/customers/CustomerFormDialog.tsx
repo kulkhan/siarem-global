@@ -27,6 +27,7 @@ const schema = z.object({
   email: z.union([z.string().email('invalid'), z.literal('')]).optional(),
   phone: z.string().max(30).optional(),
   address: z.string().max(500).optional(),
+  city: z.string().max(100).optional(),
   country: z.string().max(100).optional(),
   taxNumber: z.string().max(50).optional(),
   notes: z.string().max(1000).optional(),
@@ -78,6 +79,7 @@ export default function CustomerFormDialog({ open, mode, customerId, onClose, on
           email: existing.email ?? '',
           phone: existing.phone ?? '',
           address: existing.address ?? '',
+          city: existing.city ?? '',
           country: existing.country ?? '',
           taxNumber: existing.taxNumber ?? '',
           notes: existing.notes ?? '',
@@ -85,7 +87,7 @@ export default function CustomerFormDialog({ open, mode, customerId, onClose, on
       } else if (!isEdit) {
         reset({
           shortCode: '', name: '', email: '', phone: '',
-          address: '', country: '', taxNumber: '', notes: '',
+          address: '', city: '', country: '', taxNumber: '', notes: '',
         });
       }
     }
@@ -99,6 +101,7 @@ export default function CustomerFormDialog({ open, mode, customerId, onClose, on
         email: data.email || undefined,
         phone: data.phone || undefined,
         address: data.address || undefined,
+        city: data.city || undefined,
         country: data.country || undefined,
         taxNumber: data.taxNumber || undefined,
         notes: data.notes || undefined,
@@ -171,6 +174,10 @@ export default function CustomerFormDialog({ open, mode, customerId, onClose, on
               options={countryOptions}
               placeholder="—"
             />
+          </Field>
+
+          <Field label={t('customers.fields.city')}>
+            <Input {...register('city')} placeholder="İstanbul, Piraeus..." />
           </Field>
 
           <Field label={t('customers.fields.taxNumber')}>
