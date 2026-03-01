@@ -84,6 +84,15 @@ export const customersApi = {
 
   deleteBankAccount: (customerId: string, bankId: string) =>
     api.delete(`/customers/${customerId}/bank-accounts/${bankId}`),
+
+  listNotes: (customerId: string) =>
+    api.get<{ success: boolean; data: CustomerNote[] }>(`/customers/${customerId}/notes`),
+
+  createNote: (customerId: string, content: string) =>
+    api.post<{ success: boolean; data: CustomerNote }>(`/customers/${customerId}/notes`, { content }),
+
+  deleteNote: (customerId: string, noteId: string) =>
+    api.delete(`/customers/${customerId}/notes/${noteId}`),
 };
 
 export interface Assignee {
@@ -91,4 +100,14 @@ export interface Assignee {
   userId: string;
   assignedAt: string;
   user: { id: string; name: string; email: string; role: string };
+}
+
+export interface CustomerNote {
+  id: string;
+  companyId: string;
+  customerId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  user?: { id: string; name: string };
 }

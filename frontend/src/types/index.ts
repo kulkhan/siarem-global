@@ -17,8 +17,48 @@ export interface Company {
   country: string | null;
   taxNumber: string | null;
   website: string | null;
+  companyType: string;
+  modules: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ShipCertificate {
+  id: string;
+  shipId: string;
+  companyId: string;
+  certType: string;
+  certNo: string | null;
+  issueDate: string | null;
+  expiryDate: string;
+  issuedBy: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface ServiceReport {
+  id: string;
+  serviceId: string;
+  companyId: string;
+  workDone: string;
+  findings: string | null;
+  partsUsed: string | null;
+  reportDate: string;
+  status: string;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: { id: string; name: string };
+}
+
+export interface CustomerNote {
+  id: string;
+  companyId: string;
+  customerId: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  user?: { id: string; name: string };
 }
 
 export interface User {
@@ -29,6 +69,7 @@ export interface User {
   companyId: string | null;
   isActive: boolean;
   createdAt: string;
+  companyModules?: string[];
 }
 
 export interface AuthState {

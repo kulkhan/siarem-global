@@ -12,6 +12,7 @@ import { NativeSelect } from '@/components/ui/select';
 import { FormSection, Field } from '@/components/shared/FormSection';
 import { shipsApi } from '@/api/ships';
 import { customersApi } from '@/api/customers';
+import ShipCertificatesSection from './ShipCertificatesSection';
 
 // Static options
 const CLASSIFICATION_SOCIETIES = [
@@ -311,6 +312,13 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
           </div>
         )}
       </form>
+
+      {/* Certificates — only visible when editing an existing ship */}
+      {isEdit && shipId && (
+        <div className="px-1 pt-4 pb-2 border-t border-gray-100 dark:border-gray-700 mt-4">
+          <ShipCertificatesSection shipId={shipId} />
+        </div>
+      )}
     </Modal>
   );
 }

@@ -7,6 +7,7 @@ import {
 import contactsRoutes from './contacts.routes';
 import { Request, Response, NextFunction } from 'express';
 import { getAssignees, addAssignee, removeAssignee } from '../services/customerAssignees.service';
+import * as notesCtrl from '../controllers/customerNotes.controller';
 
 const router = Router();
 router.use(authenticate);
@@ -49,5 +50,10 @@ router.get('/:customerId/bank-accounts', listBankAccounts);
 router.post('/:customerId/bank-accounts', requireRole('ADMIN', 'MANAGER'), createBankAccountHandler);
 router.put('/:customerId/bank-accounts/:bankId', requireRole('ADMIN', 'MANAGER'), updateBankAccountHandler);
 router.delete('/:customerId/bank-accounts/:bankId', requireRole('ADMIN', 'MANAGER'), deleteBankAccountHandler);
+
+// Notes: /customers/:id/notes
+router.get('/:id/notes', notesCtrl.list);
+router.post('/:id/notes', notesCtrl.create);
+router.delete('/:id/notes/:noteId', notesCtrl.remove);
 
 export default router;

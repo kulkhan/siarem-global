@@ -65,6 +65,7 @@ enum EntityType {
   QUOTE
   INVOICE
   MEETING
+  SHIP_CERTIFICATE
 }
 
 // ─────────────────────────────────────────
@@ -90,22 +91,28 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users        User[]
-  customers    Customer[]
-  contacts     Contact[]
-  ships        Ship[]
-  services     Service[]
-  quotes       Quote[]
-  invoices     Invoice[]
-  meetings     Meeting[]
-  documents    Document[]
-  expenses     Expense[]
-  serviceTypes ServiceType[]
-  shipTypes    ShipType[]
-  auditLogs    AuditLog[]
-  products     Product[]
-  complaints   Complaint[]
-  bankAccounts CustomerBankAccount[]
+  companyType  String   @default("MARITIME") @map("company_type")
+  modules      String[] @default([]) @map("modules")
+
+  users           User[]
+  customers       Customer[]
+  contacts        Contact[]
+  ships           Ship[]
+  services        Service[]
+  quotes          Quote[]
+  invoices        Invoice[]
+  meetings        Meeting[]
+  documents       Document[]
+  expenses        Expense[]
+  serviceTypes    ServiceType[]
+  shipTypes       ShipType[]
+  auditLogs       AuditLog[]
+  products        Product[]
+  complaints      Complaint[]
+  bankAccounts    CustomerBankAccount[]
+  serviceReports  ServiceReport[]
+  shipCertificates ShipCertificate[]
+  customerNotes   CustomerNote[]
 
   @@map("companies")
 }
@@ -139,6 +146,8 @@ model User {
   createdContacts   Contact[]          @relation("ContactCreatedBy")
   auditLogs         AuditLog[]
   assignedCustomers CustomerAssignee[]
+  serviceReports    ServiceReport[]    @relation("ServiceReportCreatedBy")
+  customerNotes     CustomerNote[]     @relation("CustomerNoteUser")
 
   @@unique([companyId, email])
   @@map("users")
@@ -168,19 +177,20 @@ model Customer {
   deletedAt   DateTime?
   deletedById String?
 
-  company      Company                @relation(fields: [companyId], references: [id])
-  contacts     Contact[]
-  ships        Ship[]
-  services     Service[]
-  quotes       Quote[]
-  invoices     Invoice[]
-  meetings     Meeting[]
-  documents    Document[]
-  expenses     Expense[]
-  complaints   Complaint[]
-  bankAccounts CustomerBankAccount[]
-  createdBy    User?                  @relation("CustomerCreatedBy", fields: [createdById], references: [id])
-  assignees    CustomerAssignee[]
+  company       Company                @relation(fields: [companyId], references: [id])
+  contacts      Contact[]
+  ships         Ship[]
+  services      Service[]
+  quotes        Quote[]
+  invoices      Invoice[]
+  meetings      Meeting[]
+  documents     Document[]
+  expenses      Expense[]
+  complaints    Complaint[]
+  bankAccounts  CustomerBankAccount[]
+  createdBy     User?                  @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  assignees     CustomerAssignee[]
+  customerNotes CustomerNote[]
 
   @@unique([companyId, shortCode])
   @@map("customers")
@@ -275,15 +285,16 @@ model Ship {
   deletedAt             DateTime?
   deletedById           String?
 
-  company    Company   @relation(fields: [companyId], references: [id])
-  customer   Customer  @relation(fields: [customerId], references: [id])
-  shipType   ShipType? @relation(fields: [shipTypeId], references: [id])
-  services   Service[]
-  quoteShips QuoteShip[]
-  meetings   Meeting[]
-  documents  Document[]
-  expenses   Expense[]
-  createdBy  User?     @relation("ShipCreatedBy", fields: [createdById], references: [id])
+  company      Company           @relation(fields: [companyId], references: [id])
+  customer     Customer          @relation(fields: [customerId], references: [id])
+  shipType     ShipType?         @relation(fields: [shipTypeId], references: [id])
+  services     Service[]
+  quoteShips   QuoteShip[]
+  meetings     Meeting[]
+  documents    Document[]
+  expenses     Expense[]
+  createdBy    User?             @relation("ShipCreatedBy", fields: [createdById], references: [id])
+  certificates ShipCertificate[]
 
   @@unique([companyId, imoNumber])
   @@map("ships")
@@ -357,6 +368,7 @@ model Service {
   documents    Document[]
   logs         ServiceLog[]
   expenses     Expense[]
+  report       ServiceReport?
 
   @@map("services")
 }
@@ -556,19 +568,21 @@ model Document {
   uploadedBy User?    @relation(fields: [uploadedById], references: [id])
 
   // Polymorphic FK fields
-  customerId String?
-  shipId     String?
-  serviceId  String?
-  quoteId    String?
-  invoiceId  String?
-  meetingId  String?
+  customerId        String?
+  shipId            String?
+  serviceId         String?
+  quoteId           String?
+  invoiceId         String?
+  meetingId         String?
+  shipCertificateId String? @map("ship_certificate_id")
 
-  customer Customer? @relation(fields: [customerId], references: [id])
-  ship     Ship?     @relation(fields: [shipId], references: [id])
-  service  Service?  @relation(fields: [serviceId], references: [id])
-  quote    Quote?    @relation(fields: [quoteId], references: [id])
-  invoice  Invoice?  @relation(fields: [invoiceId], references: [id])
-  meeting  Meeting?  @relation(fields: [meetingId], references: [id])
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  ship            Ship?            @relation(fields: [shipId], references: [id])
+  service         Service?         @relation(fields: [serviceId], references: [id])
+  quote           Quote?           @relation(fields: [quoteId], references: [id])
+  invoice         Invoice?         @relation(fields: [invoiceId], references: [id])
+  meeting         Meeting?         @relation(fields: [meetingId], references: [id])
+  shipCertificate ShipCertificate? @relation(fields: [shipCertificateId], references: [id], onDelete: Cascade)
 
   @@map("documents")
 }
@@ -718,6 +732,72 @@ model InvoiceItem {
   product Product? @relation(fields: [productId], references: [id])
 
   @@map("invoice_items")
+}
+
+// ─────────────────────────────────────────
+// SERVICE REPORTS (Servis Tamamlama Raporu)
+// ─────────────────────────────────────────
+
+model ServiceReport {
+  id          String   @id @default(cuid())
+  serviceId   String   @unique @map("service_id")
+  companyId   String   @map("company_id")
+  workDone    String   @map("work_done")
+  findings    String?
+  partsUsed   String?  @map("parts_used")
+  reportDate  DateTime @default(now()) @map("report_date")
+  status      String   @default("DRAFT")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  service   Service @relation(fields: [serviceId], references: [id])
+  company   Company @relation(fields: [companyId], references: [id])
+  createdBy User    @relation("ServiceReportCreatedBy", fields: [createdById], references: [id])
+
+  @@map("service_reports")
+}
+
+// ─────────────────────────────────────────
+// SHIP CERTIFICATES (Gemi Sertifikaları)
+// ─────────────────────────────────────────
+
+model ShipCertificate {
+  id         String    @id @default(cuid())
+  shipId     String    @map("ship_id")
+  companyId  String    @map("company_id")
+  certType   String    @map("cert_type")
+  certNo     String?   @map("cert_no")
+  issueDate  DateTime? @map("issue_date")
+  expiryDate DateTime  @map("expiry_date")
+  issuedBy   String?   @map("issued_by")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  ship      Ship       @relation(fields: [shipId], references: [id], onDelete: Cascade)
+  company   Company    @relation(fields: [companyId], references: [id])
+  documents Document[]
+
+  @@map("ship_certificates")
+}
+
+// ─────────────────────────────────────────
+// CUSTOMER NOTES (Müşteri Notları)
+// ─────────────────────────────────────────
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  companyId  String   @map("company_id")
+  customerId String   @map("customer_id")
+  userId     String   @map("user_id")
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation("CustomerNoteUser", fields: [userId], references: [id])
+  company  Company  @relation(fields: [companyId], references: [id])
+
+  @@map("customer_notes")
 }
 
 // ─────────────────────────────────────────

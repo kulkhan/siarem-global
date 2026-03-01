@@ -7,6 +7,8 @@ export async function getDashboardStats(companyId: string | null) {
 
   const tenantFilter = companyId ? { companyId } : {};
 
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
   const [
     serviceStats,
     quoteStats,
@@ -17,6 +19,8 @@ export async function getDashboardStats(companyId: string | null) {
     recentMeetings,
     servicesByPriority,
     quotesByMonth,
+    revenueMonthlyRaw,
+    expiringCerts,
   ] = await Promise.all([
     prisma.service.groupBy({
       by: ['status'],
@@ -100,6 +104,41 @@ export async function getDashboardStats(companyId: string | null) {
           GROUP BY DATE_TRUNC('month', "quoteDate")
           ORDER BY DATE_TRUNC('month', "quoteDate") ASC
         `,
+
+    // Revenue monthly: last 6 months of payments grouped by month
+    // Payment has no companyId — must join through invoices
+    companyId
+      ? prisma.$queryRaw<{ month: string; total: number }[]>`
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', p."paymentDate"), 'YYYY-MM') as month,
+            SUM(p.amount) as total
+          FROM payments p
+          JOIN invoices i ON i.id = p."invoiceId"
+          WHERE p."paymentDate" >= NOW() - INTERVAL '6 months'
+            AND i."company_id" = ${companyId}
+          GROUP BY DATE_TRUNC('month', p."paymentDate")
+          ORDER BY DATE_TRUNC('month', p."paymentDate") ASC
+        `
+      : prisma.$queryRaw<{ month: string; total: number }[]>`
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', "paymentDate"), 'YYYY-MM') as month,
+            SUM(amount) as total
+          FROM payments
+          WHERE "paymentDate" >= NOW() - INTERVAL '6 months'
+          GROUP BY DATE_TRUNC('month', "paymentDate")
+          ORDER BY DATE_TRUNC('month', "paymentDate") ASC
+        `,
+
+    // Expiring certificates (within 30 days)
+    prisma.shipCertificate.findMany({
+      where: {
+        ...(companyId ? { companyId } : {}),
+        expiryDate: { lte: thirtyDaysFromNow },
+      },
+      include: { ship: { select: { id: true, name: true } } },
+      orderBy: { expiryDate: 'asc' },
+      take: 20,
+    }),
   ]);
 
   const customerIds = topCustomers.map((c) => c.customerId);
@@ -164,6 +203,18 @@ export async function getDashboardStats(companyId: string | null) {
       approved: Number(r.approved),
       rejected: Number(r.rejected),
       total: Number(r.total),
+    })),
+    revenueMonthly: revenueMonthlyRaw.map((r) => ({
+      month: r.month,
+      total: Number(r.total),
+    })),
+    expiringCerts: expiringCerts.map((c) => ({
+      id: c.id,
+      certType: c.certType,
+      certNo: c.certNo,
+      expiryDate: c.expiryDate,
+      daysLeft: Math.ceil((c.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+      ship: c.ship,
     })),
   };
 }

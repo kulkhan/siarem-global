@@ -48,6 +48,7 @@ router.get('/', ctrl.listCompanies);
 router.get('/:id', ctrl.getCompany);
 router.post('/', ctrl.createCompany);
 router.put('/:id', ctrl.updateCompany);
+router.put('/:id/modules', ctrl.updateModules);
 router.delete('/:id', ctrl.deleteCompany);
 
 export default router;

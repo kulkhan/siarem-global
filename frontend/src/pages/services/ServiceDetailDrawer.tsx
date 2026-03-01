@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { X, Ship, User, CheckCircle2, Circle, FileText, Send, CreditCard, ClipboardCheck, Printer } from 'lucide-react';
+import { X, Ship, User, CheckCircle2, FileText, Send, CreditCard, ClipboardCheck, Printer, ClipboardList } from 'lucide-react';
 import { servicesApi, type ServiceInvoice, type ServiceLog } from '@/api/services';
 import { getOwnCompany } from '@/api/companies';
 import { printService } from '@/utils/printDocument';
+import ServiceReportDialog from './ServiceReportDialog';
 
 // ── Billing pipeline ─────────────────────────────────────────────────────────
 
@@ -197,6 +199,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { data: res, isLoading } = useQuery({
     queryKey: ['service-detail', serviceId],
@@ -213,6 +216,7 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
   const svc = res;
 
   return (
+    <>
     <div className="fixed inset-0 z-40 flex justify-end pointer-events-none">
       {/* Backdrop */}
       <div
@@ -226,6 +230,14 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50 shrink-0">
           <h2 className="text-base font-semibold text-gray-800">{t('services.detail')}</h2>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setReportOpen(true)}
+              disabled={!svc}
+              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+              title={t('serviceReport.title')}
+            >
+              <ClipboardList className="w-4 h-4" />
+            </button>
             <button
               onClick={() => svc && printService(svc as Parameters<typeof printService>[0], ownCompany, lang)}
               disabled={!svc}
@@ -365,5 +377,14 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
         )}
       </div>
     </div>
+
+    {reportOpen && svc && (
+      <ServiceReportDialog
+        serviceId={serviceId}
+        serviceName={svc.serviceType ? (lang === 'tr' ? svc.serviceType.nameTr : svc.serviceType.nameEn) : undefined}
+        onClose={() => setReportOpen(false)}
+      />
+    )}
+  </>
   );
 }

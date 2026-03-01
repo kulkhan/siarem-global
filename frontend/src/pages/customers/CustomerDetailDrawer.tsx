@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { X, Plus, Pencil, Trash2, Star, Phone, Mail, User, UserPlus, UserMinus, Building2 } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Star, Phone, Mail, User, UserPlus, UserMinus, Building2, MessageSquare } from 'lucide-react';
 import { customersApi, type BankAccount } from '@/api/customers';
 import { contactsApi, type Contact } from '@/api/contacts';
 import { usersApi } from '@/api/users';
@@ -41,6 +41,11 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
 
   const { user: currentUser } = useAuthStore();
   const canManageAssignees = currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
+
+  const [noteContent, setNoteContent] = useState('');
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [contactForm, setContactForm] = useState<ContactFormState | null>(null);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
@@ -78,6 +83,28 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
     queryKey: ['users'],
     queryFn: () => usersApi.list().then((r) => r.data.data),
     enabled: canManageAssignees,
+  });
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ['customer-notes', customerId],
+    queryFn: () => customersApi.listNotes(customerId).then((r) => r.data.data),
+    enabled: !!customerId,
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: (content: string) => customersApi.createNote(customerId, content),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customer-notes', customerId] });
+      setNoteContent('');
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: string) => customersApi.deleteNote(customerId, noteId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customer-notes', customerId] });
+      setDeleteNoteId(null);
+    },
   });
 
   const addAssigneeMutation = useMutation({
@@ -391,7 +418,7 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
             </div>
 
             {/* Contacts section */}
-            <div className="px-5 py-4">
+            <div className="px-5 py-4 border-b border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
                   {t('contacts.title')} ({contacts.length})
@@ -563,6 +590,94 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
                 </div>
               )}
             </div>
+
+            {/* Notes section */}
+            <div className="px-5 py-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  {t('customerNote.title')} ({notes.length})
+                </div>
+              </div>
+
+              {/* Add note */}
+              <div className="flex gap-2 mb-3">
+                <textarea
+                  ref={noteTextareaRef}
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && noteContent.trim()) {
+                      addNoteMutation.mutate(noteContent.trim());
+                    }
+                  }}
+                  rows={2}
+                  placeholder={t('customerNote.placeholder')}
+                  className="flex-1 px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+                <button
+                  onClick={() => noteContent.trim() && addNoteMutation.mutate(noteContent.trim())}
+                  disabled={!noteContent.trim() || addNoteMutation.isPending}
+                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors self-end"
+                >
+                  {t('customerNote.addNote')}
+                </button>
+              </div>
+
+              {/* Notes list */}
+              {notes.length === 0 ? (
+                <div className="text-xs text-gray-400 py-2 text-center">{t('customerNote.noNotes')}</div>
+              ) : (
+                <div className="space-y-2">
+                  {notes.map((note) => (
+                    <div key={note.id} className="group flex items-start gap-2.5 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50/50">
+                      <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <User className="w-3 h-3 text-indigo-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[10px] font-semibold text-gray-700">{note.user?.name}</span>
+                          <span className="text-[10px] text-gray-400">
+                            {new Date(note.createdAt).toLocaleDateString('tr-TR')}
+                            {' '}
+                            {new Date(note.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">{note.content}</div>
+                      </div>
+                      {(isAdmin || note.userId === currentUser?.id) && (
+                        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {deleteNoteId === note.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => deleteNoteMutation.mutate(note.id)}
+                                className="text-[10px] text-red-600 font-semibold hover:underline"
+                              >
+                                {t('common.yes')}
+                              </button>
+                              <button
+                                onClick={() => setDeleteNoteId(null)}
+                                className="text-[10px] text-gray-500 font-semibold hover:underline"
+                              >
+                                {t('common.no')}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeleteNoteId(note.id)}
+                              className="p-1 hover:bg-red-50 rounded text-gray-300 hover:text-red-400"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>

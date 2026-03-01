@@ -42,6 +42,7 @@
     "error": "Hata",
     "save": "Kaydet",
     "saving": "Kaydediliyor...",
+    "uploading": "Yükleniyor...",
     "cancel": "İptal",
     "delete": "Sil",
     "edit": "Düzenle",
@@ -525,5 +526,59 @@
       "status": "Durum",
       "flag": "Bayrak"
     }
+  },
+  "serviceReport": {
+    "title": "Servis Raporu",
+    "workDone": "Yapılan İşler",
+    "workDonePlaceholder": "Gerçekleştirilen işlemleri açıklayın...",
+    "findings": "Bulgular / Tespitler",
+    "findingsPlaceholder": "Tespit edilen sorunlar veya gözlemler...",
+    "partsUsed": "Kullanılan Parçalar",
+    "partsUsedPlaceholder": "Değiştirilen veya kullanılan parçalar...",
+    "reportDate": "Rapor Tarihi",
+    "status": "Durum",
+    "statusDraft": "Taslak",
+    "statusFinalized": "Kesinleştirildi",
+    "finalizedWarning": "Rapor kesinleştirildiğinde düzenleme kısıtlanabilir.",
+    "openReport": "Servis Raporu",
+    "noReport": "Henüz rapor oluşturulmamış"
+  },
+  "shipCertificate": {
+    "title": "Sertifikalar",
+    "addCertificate": "Sertifika Ekle",
+    "editCertificate": "Sertifika Düzenle",
+    "certType": "Sertifika Türü",
+    "certNo": "Sertifika No",
+    "issueDate": "Düzenleme Tarihi",
+    "expiryDate": "Geçerlilik Tarihi",
+    "issuedBy": "Düzenleyen Kuruluş",
+    "notes": "Notlar",
+    "status": "Durum",
+    "statusActive": "Geçerli",
+    "statusExpiringSoon": "Yakında Dolacak",
+    "statusExpired": "Süresi Dolmuş",
+    "noRecords": "Sertifika kaydı bulunmuyor",
+    "deleteConfirm": "Bu sertifikayı silmek istediğinizden emin misiniz?",
+    "documents": "Dokümanlar",
+    "uploadDocument": "Doküman Yükle",
+    "noDocuments": "Doküman eklenmemiş",
+    "certTypes": {
+      "ISM": "ISM Belgesi",
+      "ISPS": "ISPS Belgesi",
+      "MLC": "MLC Belgesi",
+      "IMO_DCS": "IMO DCS",
+      "EU_MRV": "EU MRV",
+      "CLC": "CLC Belgesi",
+      "MARPOL": "MARPOL",
+      "SOLAS": "SOLAS",
+      "OTHER": "Diğer"
+    }
+  },
+  "customerNote": {
+    "title": "Notlar",
+    "addNote": "Not Ekle",
+    "placeholder": "Müşteri hakkında not ekleyin...",
+    "noNotes": "Henüz not eklenmemiş",
+    "deleteConfirm": "Bu notu silmek istediğinizden emin misiniz?"
   }
 }

@@ -67,3 +67,12 @@ export async function uploadLogo(id: string, file: File): Promise<Company> {
   });
   return res.data.data;
 }
+
+export async function updateCompanyModules(
+  id: string,
+  companyType: string,
+  modules: string[]
+): Promise<Company> {
+  const res = await api.put(`/companies/${id}/modules`, { companyType, modules });
+  return res.data.data;
+}

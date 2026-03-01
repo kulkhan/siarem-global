@@ -35,6 +35,15 @@ export interface DashboardStats {
   }[];
   servicesByPriority: { priority: string; count: number }[];
   quotesByMonth: { month: string; approved: number; rejected: number; total: number }[];
+  revenueMonthly: { month: string; total: number }[];
+  expiringCerts: {
+    id: string;
+    certType: string;
+    certNo: string | null;
+    expiryDate: string;
+    daysLeft: number;
+    ship: { id: string; name: string } | null;
+  }[];
 }
 
 export const dashboardApi = {

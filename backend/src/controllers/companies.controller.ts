@@ -79,6 +79,16 @@ export async function deleteCompany(req: Request, res: Response, next: NextFunct
   }
 }
 
+export async function updateModules(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { companyType, modules } = req.body as { companyType: string; modules: string[] };
+    const data = await companiesService.updateCompanyModules(req.params.id, companyType, modules ?? []);
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function uploadLogo(req: Request, res: Response, next: NextFunction) {
   const cleanup = () => {
     if (req.file) try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }

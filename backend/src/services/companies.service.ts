@@ -23,6 +23,14 @@ export interface CompanyUpdateData {
   country?: string;
   taxNumber?: string;
   website?: string;
+  companyType?: string;
+  modules?: string[];
+}
+
+export async function updateCompanyModules(id: string, companyType: string, modules: string[]) {
+  const company = await prisma.company.findUnique({ where: { id } });
+  if (!company) throw new AppError('Şirket bulunamadı', 404);
+  return prisma.company.update({ where: { id }, data: { companyType, modules } });
 }
 
 // Fields an ADMIN can self-update (excludes slug/domain/plan/isActive)

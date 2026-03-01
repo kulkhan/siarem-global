@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
   Wrench, FileText, Receipt, AlertTriangle,
-  TrendingUp, CheckCircle, XCircle, Phone, Users,
+  TrendingUp, CheckCircle, XCircle, Phone, Users, ShieldAlert,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -150,6 +150,13 @@ export default function DashboardPage() {
     Onaylanan: r.approved,
     Reddedilen: r.rejected,
   })) ?? [];
+
+  const revenueMonthData = stats?.revenueMonthly.map((r) => ({
+    month: fmtMonth(r.month),
+    Gelir: r.total,
+  })) ?? [];
+
+  const expiringCerts = stats?.expiringCerts ?? [];
 
   if (isLoading) {
     return (
@@ -427,6 +434,63 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Row 6: Monthly Revenue chart */}
+      {revenueMonthData.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <SectionTitle>Son 6 Ay — Tahsilat Geliri</SectionTitle>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={revenueMonthData} barSize={24} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ fill: '#f9fafb' }}
+                formatter={(v: number | undefined) => [fmt(v ?? 0), 'Gelir']}
+              />
+              <Bar dataKey="Gelir" fill="#22c55e" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Row 7: Expiring certificates (only when data exists) */}
+      {expiringCerts.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldAlert className="w-4 h-4 text-red-500" />
+            <SectionTitle>Sona Erecek Sertifikalar (30 gün)</SectionTitle>
+          </div>
+          <div className="space-y-2">
+            {expiringCerts.map((cert) => {
+              const isExpired = cert.daysLeft < 0;
+              const isUrgent = cert.daysLeft <= 7;
+              return (
+                <div key={cert.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${
+                    isExpired ? 'bg-red-100 text-red-700' :
+                    isUrgent  ? 'bg-red-100 text-red-700' :
+                               'bg-orange-100 text-orange-700'
+                  }`}>
+                    {isExpired ? 'Doldu' : `${cert.daysLeft}g`}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-semibold text-gray-800">{cert.certType}</span>
+                    {cert.ship && (
+                      <span className="text-xs text-gray-400 ml-2">{cert.ship.name}</span>
+                    )}
+                    {cert.certNo && (
+                      <span className="text-[10px] font-mono text-gray-400 ml-2">{cert.certNo}</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-gray-400 shrink-0">
+                    {new Date(cert.expiryDate).toLocaleDateString('tr-TR')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

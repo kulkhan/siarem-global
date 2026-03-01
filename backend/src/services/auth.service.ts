@@ -70,6 +70,16 @@ export async function loginUser(email: string, password: string, companyId: stri
     throw new AppError('Invalid email or password', 401);
   }
 
+  // Fetch company modules for sidebar filtering
+  let companyModules: string[] = [];
+  if (user.companyId) {
+    const company = await prisma.company.findUnique({
+      where: { id: user.companyId },
+      select: { modules: true },
+    });
+    companyModules = company?.modules ?? [];
+  }
+
   const token = jwt.sign(
     {
       sub: user.id,
@@ -90,6 +100,7 @@ export async function loginUser(email: string, password: string, companyId: stri
       email: user.email,
       role: user.role,
       companyId: user.companyId ?? null,
+      companyModules,
     },
   };
 }
@@ -105,10 +116,12 @@ export async function getCurrentUser(userId: string) {
       companyId: true,
       isActive: true,
       createdAt: true,
+      company: { select: { modules: true } },
     },
   });
   if (!user || !user.isActive) {
     throw new AppError('User not found', 404);
   }
-  return user;
+  const { company, ...rest } = user;
+  return { ...rest, companyModules: company?.modules ?? [] };
 }

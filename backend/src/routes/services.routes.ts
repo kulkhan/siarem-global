@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import * as ctrl from '../controllers/services.controller';
+import * as reportCtrl from '../controllers/serviceReport.controller';
 
 const router = Router();
 router.use(authenticate);
@@ -11,5 +12,9 @@ router.get('/:id', ctrl.getOne);
 router.post('/', ctrl.create);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
+
+// Service report endpoints
+router.get('/:id/report', reportCtrl.getReport);
+router.put('/:id/report', reportCtrl.upsertReport);
 
 export default router;

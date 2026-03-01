@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Building2, Wrench, FileText,
   Receipt, CalendarDays, FolderOpen, BarChart3, Settings,
-  LogOut, Anchor, ChevronLeft, ChevronRight, Wallet, Globe, MessageSquare,
+  LogOut, Anchor, ChevronLeft, ChevronRight, Wallet, Globe, MessageSquare,Ship
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -27,6 +27,7 @@ const navItems = [
   { key: 'documents', path: '/documents', icon: FolderOpen },
   { key: 'reports', path: '/reports', icon: BarChart3 },
   { key: 'settings', path: '/settings', icon: Settings, adminOnly: true },
+  { key: 'ships', path: '/ships', icon: Ship, moduleRequired: 'SHIPS' },
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
@@ -48,7 +49,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     clearAuth();
   }
 
-  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+  const companyModules = ownCompany?.modules ?? [];
+  const visibleItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.moduleRequired && !isSuperAdmin && !companyModules.includes(item.moduleRequired)) return false;
+    return true;
+  });
 
   return (
     <aside

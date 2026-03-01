@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Upload, ImageOff } from 'lucide-react';
-import { createCompany, updateCompany, uploadLogo } from '@/api/companies';
+import { createCompany, updateCompany, uploadLogo, updateCompanyModules } from '@/api/companies';
 import type { Company } from '@/types';
 import type { CompanyInput } from '@/api/companies';
 
@@ -12,12 +12,19 @@ interface Props {
   onClose: () => void;
 }
 
+const ALL_MODULES = [
+  { key: 'SHIPS', label: 'Gemi Yönetimi (SHIPS)' },
+  { key: 'SERVICE_REPORT', label: 'Servis Raporu (SERVICE_REPORT)' },
+];
+
 export default function CompanyFormDialog({ open, company, onClose }: Props) {
   const qc = useQueryClient();
   const isEdit = !!company;
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [companyType, setCompanyType] = useState('MARITIME');
+  const [selectedModules, setSelectedModules] = useState<string[]>(['SHIPS', 'SERVICE_REPORT']);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CompanyInput>();
 
@@ -25,6 +32,8 @@ export default function CompanyFormDialog({ open, company, onClose }: Props) {
     if (open) {
       setLogoFile(null);
       setLogoPreview(company?.logoUrl ?? null);
+      setCompanyType(company?.companyType ?? 'MARITIME');
+      setSelectedModules(company?.modules ?? ['SHIPS', 'SERVICE_REPORT']);
       reset(company ? {
         name: company.name,
         domain: company.domain,
@@ -42,6 +51,12 @@ export default function CompanyFormDialog({ open, company, onClose }: Props) {
     setLogoPreview(URL.createObjectURL(file));
   }
 
+  function toggleModule(key: string) {
+    setSelectedModules((prev) =>
+      prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]
+    );
+  }
+
   const mutation = useMutation({
     mutationFn: async (data: CompanyInput) => {
       const saved = isEdit
@@ -50,6 +65,7 @@ export default function CompanyFormDialog({ open, company, onClose }: Props) {
       if (logoFile) {
         await uploadLogo(saved.id, logoFile);
       }
+      await updateCompanyModules(saved.id, companyType, selectedModules);
       return saved;
     },
     onSuccess: () => {
@@ -63,7 +79,7 @@ export default function CompanyFormDialog({ open, company, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900">
             {isEdit ? 'Şirket Düzenle' : 'Yeni Şirket'}
@@ -153,6 +169,37 @@ export default function CompanyFormDialog({ open, company, onClose }: Props) {
               <option value="pro">Pro</option>
               <option value="enterprise">Enterprise</option>
             </select>
+          </div>
+
+          {/* Firma Tipi */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Firma Tipi</label>
+            <select
+              value={companyType}
+              onChange={(e) => setCompanyType(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="MARITIME">Denizcilik (Maritime)</option>
+              <option value="GENERAL_SERVICE">Genel Servis</option>
+            </select>
+          </div>
+
+          {/* Modüller */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Aktif Modüller</label>
+            <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+              {ALL_MODULES.map((mod) => (
+                <label key={mod.key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedModules.includes(mod.key)}
+                    onChange={() => toggleModule(mod.key)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">{mod.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
