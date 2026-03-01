@@ -27,6 +27,14 @@ export interface CompanyUpdateData {
   modules?: string[];
 }
 
+/**
+ * Updates a company's type and enabled module list (SUPER_ADMIN only).
+ * @param id - Company ID
+ * @param companyType - Company type string (e.g. 'MARITIME', 'GENERAL_SERVICE')
+ * @param modules - Array of module keys to enable (e.g. ['SHIPS', 'SERVICE_REPORT'])
+ * @returns Updated company record
+ * @throws {AppError} If company is not found (404)
+ */
 export async function updateCompanyModules(id: string, companyType: string, modules: string[]) {
   const company = await prisma.company.findUnique({ where: { id } });
   if (!company) throw new AppError('Şirket bulunamadı', 404);
@@ -45,6 +53,10 @@ export interface CompanySelfUpdateData {
   website?: string;
 }
 
+/**
+ * Returns all companies ordered by creation date, including user and customer counts.
+ * @returns Array of company records with _count aggregates
+ */
 export async function getCompanies() {
   return prisma.company.findMany({
     orderBy: { createdAt: 'desc' },
@@ -54,6 +66,12 @@ export async function getCompanies() {
   });
 }
 
+/**
+ * Returns a single company by ID with users list and entity counts.
+ * @param id - Company ID
+ * @returns Company record with included users and _count aggregates
+ * @throws {AppError} If company is not found (404)
+ */
 export async function getCompanyById(id: string) {
   const company = await prisma.company.findUnique({
     where: { id },
@@ -69,6 +87,12 @@ export async function getCompanyById(id: string) {
   return company;
 }
 
+/**
+ * Creates a new company after verifying domain and slug uniqueness.
+ * @param data - Company creation data including name, domain, and slug
+ * @returns Created company record
+ * @throws {AppError} If domain or slug is already in use (400)
+ */
 export async function createCompany(data: CompanyCreateData) {
   const domainExists = await prisma.company.findUnique({ where: { domain: data.domain } });
   if (domainExists) throw new AppError('Bu domain zaten kullanımda', 400);
@@ -79,6 +103,13 @@ export async function createCompany(data: CompanyCreateData) {
   return prisma.company.create({ data });
 }
 
+/**
+ * Updates a company's fields after verifying domain/slug uniqueness on change.
+ * @param id - Company ID
+ * @param data - Partial update data
+ * @returns Updated company record
+ * @throws {AppError} If company is not found (404) or new domain/slug is taken (400)
+ */
 export async function updateCompany(id: string, data: CompanyUpdateData) {
   const company = await prisma.company.findUnique({ where: { id } });
   if (!company) throw new AppError('Şirket bulunamadı', 404);
@@ -96,6 +127,12 @@ export async function updateCompany(id: string, data: CompanyUpdateData) {
   return prisma.company.update({ where: { id }, data });
 }
 
+/**
+ * Permanently deletes a company, blocking if it still has associated users.
+ * @param id - Company ID
+ * @returns Deleted company record
+ * @throws {AppError} If company is not found (404) or has remaining users (400)
+ */
 export async function deleteCompany(id: string) {
   const company = await prisma.company.findUnique({
     where: { id },

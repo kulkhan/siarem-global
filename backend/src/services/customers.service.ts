@@ -13,6 +13,12 @@ export interface CustomerQuery {
 
 const SORT_WHITELIST = ['name', 'shortCode', 'country', 'createdAt', 'shipCount'];
 
+/**
+ * Returns a paginated, filterable list of active customers for a tenant.
+ * @param q - Query options including page, pageSize, search, country, isActive, sort
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN (all tenants)
+ * @returns Paginated customer list with ship counts
+ */
 export async function getCustomers(q: CustomerQuery, companyId: string | null) {
   const { page, pageSize, search, country, isActive, sortOrder = 'asc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'name';
@@ -55,6 +61,13 @@ export async function getCustomers(q: CustomerQuery, companyId: string | null) {
   return { data, total, page, pageSize };
 }
 
+/**
+ * Returns a single customer by ID with contacts, bank accounts, assignees, and counts.
+ * @param id - Customer ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Customer record with related data
+ * @throws {AppError} If customer is not found or soft-deleted (404)
+ */
 export async function getCustomerById(id: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const c = await prisma.customer.findFirst({
@@ -73,6 +86,14 @@ export async function getCustomerById(id: string, companyId: string | null) {
   return c;
 }
 
+/**
+ * Creates a new customer after verifying shortCode uniqueness within the tenant.
+ * @param data - Customer fields including shortCode, name, and optional contact info
+ * @param userId - ID of the creating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Created customer record
+ * @throws {AppError} If tenant is missing (400) or shortCode is already in use (400)
+ */
 export async function createCustomer(
   data: {
     shortCode: string;
@@ -96,6 +117,15 @@ export async function createCustomer(
   return prisma.customer.create({ data: { ...data, companyId, createdById: userId } });
 }
 
+/**
+ * Updates a customer's profile fields.
+ * @param id - Customer ID
+ * @param data - Partial customer update data
+ * @param userId - ID of the updating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated customer record
+ * @throws {AppError} If customer is not found (404)
+ */
 export async function updateCustomer(
   id: string,
   data: {
@@ -118,6 +148,14 @@ export async function updateCustomer(
   return prisma.customer.update({ where: { id }, data: { ...data, updatedById: userId } });
 }
 
+/**
+ * Soft-deletes a customer, blocking if they still have active ships.
+ * @param id - Customer ID
+ * @param userId - ID of the user performing the deletion
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated customer record with deletedAt set
+ * @throws {AppError} If the customer has ships (400) or is not found (404)
+ */
 export async function deleteCustomer(id: string, userId?: string, companyId?: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const shipCount = await prisma.ship.count({ where: { customerId: id, deletedAt: null } });
@@ -131,6 +169,11 @@ export async function deleteCustomer(id: string, userId?: string, companyId?: st
   });
 }
 
+/**
+ * Returns a distinct list of country values from active customers for filter dropdowns.
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Sorted array of country strings
+ */
 export async function getCountryOptions(companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const rows = await prisma.customer.findMany({
@@ -144,6 +187,12 @@ export async function getCountryOptions(companyId: string | null) {
 
 // ── Bank Accounts ─────────────────────────────────────────────────────────────
 
+/**
+ * Returns all bank accounts for a customer ordered by sortOrder.
+ * @param customerId - Customer ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Array of CustomerBankAccount records
+ */
 export async function getBankAccounts(customerId: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   return prisma.customerBankAccount.findMany({
@@ -152,6 +201,13 @@ export async function getBankAccounts(customerId: string, companyId: string | nu
   });
 }
 
+/**
+ * Creates a bank account for a customer; sortOrder is set to current account count.
+ * @param customerId - Customer ID
+ * @param data - Bank account details (bankName, iban, accountNo, currency, notes)
+ * @param companyId - Tenant isolation company ID
+ * @returns Created CustomerBankAccount record
+ */
 export async function createBankAccount(
   customerId: string,
   data: { bankName: string; iban?: string; accountNo?: string; currency?: string; notes?: string },
@@ -163,6 +219,14 @@ export async function createBankAccount(
   });
 }
 
+/**
+ * Updates a bank account's fields after verifying tenant ownership.
+ * @param id - Bank account ID
+ * @param data - Partial update data
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated CustomerBankAccount record
+ * @throws {AppError} If bank account is not found (404)
+ */
 export async function updateBankAccount(
   id: string,
   data: { bankName?: string; iban?: string; accountNo?: string; currency?: string; notes?: string },
@@ -174,6 +238,13 @@ export async function updateBankAccount(
   return prisma.customerBankAccount.update({ where: { id }, data });
 }
 
+/**
+ * Permanently deletes a bank account after verifying tenant ownership.
+ * @param id - Bank account ID
+ * @param companyId - Tenant isolation company ID
+ * @returns Deleted CustomerBankAccount record
+ * @throws {AppError} If bank account is not found (404)
+ */
 export async function deleteBankAccount(id: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const existing = await prisma.customerBankAccount.findFirst({ where: { id, ...tenantFilter } });

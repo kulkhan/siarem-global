@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
 import { env } from './config/env';
 import routes from './routes';
@@ -7,6 +8,9 @@ import { resolveTenant } from './middleware/tenant.middleware';
 import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
+
+// Security headers
+app.use(helmet());
 
 // CORS
 app.use(cors({

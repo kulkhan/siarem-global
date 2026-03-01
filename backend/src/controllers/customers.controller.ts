@@ -6,6 +6,11 @@ import {
 } from '../services/customers.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of customers.
+ * @route GET /api/customers
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -23,6 +28,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns a single customer with contacts, bank accounts, assignees, and counts.
+ * @route GET /api/customers/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -31,6 +41,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new customer.
+ * @route POST /api/customers
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -41,6 +56,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a customer's profile fields.
+ * @route PUT /api/customers/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -51,6 +71,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Soft-deletes a customer.
+ * @route DELETE /api/customers/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -61,6 +86,11 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns a distinct list of country values used in customer records.
+ * @route GET /api/customers/options/countries
+ * @access authenticate
+ */
 export async function countryOptions(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -69,6 +99,11 @@ export async function countryOptions(req: Request, res: Response, next: NextFunc
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns all bank accounts for a customer.
+ * @route GET /api/customers/:customerId/bank-accounts
+ * @access authenticate
+ */
 export async function listBankAccounts(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -77,6 +112,11 @@ export async function listBankAccounts(req: Request, res: Response, next: NextFu
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a bank account for a customer.
+ * @route POST /api/customers/:customerId/bank-accounts
+ * @access authenticate | requireRole('ADMIN', 'MANAGER')
+ */
 export async function createBankAccountHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId;
@@ -86,6 +126,11 @@ export async function createBankAccountHandler(req: Request, res: Response, next
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a customer bank account.
+ * @route PUT /api/customers/:customerId/bank-accounts/:bankId
+ * @access authenticate | requireRole('ADMIN', 'MANAGER')
+ */
 export async function updateBankAccountHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -94,6 +139,11 @@ export async function updateBankAccountHandler(req: Request, res: Response, next
   } catch (err) { next(err); }
 }
 
+/**
+ * Permanently deletes a customer bank account.
+ * @route DELETE /api/customers/:customerId/bank-accounts/:bankId
+ * @access authenticate | requireRole('ADMIN', 'MANAGER')
+ */
 export async function deleteBankAccountHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;

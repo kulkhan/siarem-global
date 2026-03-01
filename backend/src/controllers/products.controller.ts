@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import * as svc from '../services/products.service';
 
+/**
+ * Returns all products (active and inactive) for the tenant.
+ * @route GET /api/products
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -9,6 +14,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new product for the tenant.
+ * @route POST /api/products
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -17,6 +27,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a product by ID.
+ * @route PUT /api/products/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -25,6 +40,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Permanently deletes a product by ID.
+ * @route DELETE /api/products/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;

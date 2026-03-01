@@ -12,6 +12,12 @@ interface MeetingQuery {
   sortOrder?: 'asc' | 'desc';
 }
 
+/**
+ * Returns a paginated, filterable list of meetings with customer and ship details.
+ * @param q - Query options including search, customerId, meetingType, date range, sort
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN (all tenants)
+ * @returns Paginated meeting list
+ */
 export async function getMeetings(q: MeetingQuery, companyId: string | null) {
   const page = q.page ?? 1;
   const pageSize = q.pageSize ?? 20;
@@ -54,6 +60,13 @@ export async function getMeetings(q: MeetingQuery, companyId: string | null) {
   return { data, total, page, pageSize };
 }
 
+/**
+ * Returns a single meeting by ID with customer, ship, and creator details.
+ * @param id - Meeting ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Meeting record with includes
+ * @throws {Error} If meeting is not found (Prisma findFirstOrThrow)
+ */
 export async function getMeetingById(id: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   return prisma.meeting.findFirstOrThrow({
@@ -66,6 +79,13 @@ export async function getMeetingById(id: string, companyId: string | null) {
   });
 }
 
+/**
+ * Creates a new meeting record for a customer.
+ * @param data - Meeting details (customerId, title, meetingDate, and optional fields)
+ * @param userId - ID of the creating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Created meeting record with customer and ship details
+ */
 export async function createMeeting(
   data: {
     customerId: string;
@@ -107,6 +127,15 @@ export async function createMeeting(
   });
 }
 
+/**
+ * Updates a meeting's fields after verifying tenant ownership.
+ * @param id - Meeting ID
+ * @param data - Partial update data
+ * @param userId - ID of the updating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated meeting record with customer and ship details
+ * @throws {Error} If meeting is not found (Prisma findFirstOrThrow)
+ */
 export async function updateMeeting(
   id: string,
   data: Partial<{
@@ -145,6 +174,14 @@ export async function updateMeeting(
   });
 }
 
+/**
+ * Soft-deletes a meeting by setting deletedAt timestamp.
+ * @param id - Meeting ID
+ * @param userId - ID of the user performing the deletion
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated meeting record with deletedAt set
+ * @throws {Error} If meeting is not found (Prisma findFirstOrThrow)
+ */
 export async function deleteMeeting(id: string, userId?: string, companyId?: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   await prisma.meeting.findFirstOrThrow({ where: { id, deletedAt: null, ...tenantFilter } });

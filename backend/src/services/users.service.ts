@@ -1,6 +1,11 @@
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 
+/**
+ * Returns all non-SUPER_ADMIN users for a tenant, ordered by name.
+ * @param companyId - Tenant isolation company ID; null returns users across all tenants
+ * @returns Array of user records (excluding password)
+ */
 export async function getUsers(companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   return prisma.user.findMany({
@@ -10,6 +15,12 @@ export async function getUsers(companyId: string | null) {
   });
 }
 
+/**
+ * Creates a new user with a bcrypt-hashed password.
+ * @param data - User fields (name, email, password, role)
+ * @param companyId - Tenant company ID to associate the user with
+ * @returns Created user record (excluding password)
+ */
 export async function createUser(data: {
   name: string;
   email: string;
@@ -29,6 +40,12 @@ export async function createUser(data: {
   });
 }
 
+/**
+ * Updates a user's fields; hashes password if provided.
+ * @param id - User ID
+ * @param data - Partial update data (name, email, role, isActive, password)
+ * @returns Updated user record (excluding password)
+ */
 export async function updateUser(
   id: string,
   data: {
@@ -53,6 +70,11 @@ export async function updateUser(
   });
 }
 
+/**
+ * Permanently deletes a user record.
+ * @param id - User ID
+ * @returns Deleted user record
+ */
 export async function deleteUser(id: string) {
   return prisma.user.delete({ where: { id } });
 }

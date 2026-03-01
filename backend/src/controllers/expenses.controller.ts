@@ -4,6 +4,11 @@ import {
 } from '../services/expenses.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of expenses and income with totals.
+ * @route GET /api/expenses
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -27,6 +32,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns a single expense record by ID.
+ * @route GET /api/expenses/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -35,6 +45,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new expense or income record.
+ * @route POST /api/expenses
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -45,6 +60,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates an expense record by ID.
+ * @route PUT /api/expenses/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -55,6 +75,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Soft-deletes an expense record by ID.
+ * @route DELETE /api/expenses/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;

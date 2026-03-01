@@ -18,6 +18,12 @@ export interface ServiceQuery {
 
 const SORT_WHITELIST = ['createdAt', 'updatedAt', 'status', 'priority', 'startDate', 'completedAt'];
 
+/**
+ * Returns a paginated, filterable list of services with customer, ship, and type details.
+ * @param q - Query options including search, customerId, shipId, status, priority, sort
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN (all tenants)
+ * @returns Paginated service list
+ */
 export async function getServices(q: ServiceQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, shipId, serviceTypeId, status, priority, assignedUserId, sortOrder = 'desc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'createdAt';
@@ -66,6 +72,13 @@ export async function getServices(q: ServiceQuery, companyId: string | null) {
   return { data, total, page, pageSize };
 }
 
+/**
+ * Returns a single service by ID with all related data including invoices and activity logs.
+ * @param id - Service ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Service record with customer, ship, serviceType, invoices, logs (last 100)
+ * @throws {AppError} If service is not found (404)
+ */
 export async function getServiceById(id: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const s = await prisma.service.findFirst({
@@ -101,6 +114,14 @@ export async function getServiceById(id: string, companyId: string | null) {
   return s;
 }
 
+/**
+ * Creates a new service and appends a CREATED entry to the service log, in a transaction.
+ * @param data - Service fields (customerId, serviceTypeId, status, priority, regulatory fields, etc.)
+ * @param userId - ID of the creating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Created service record
+ * @throws {AppError} If tenant is missing (400)
+ */
 export async function createService(
   data: {
     customerId: string;
@@ -147,6 +168,16 @@ export async function createService(
   });
 }
 
+/**
+ * Updates a service and appends change entries to the service log in a transaction.
+ * Tracks changes to status, invoiceReady, assignedUserId, and priority.
+ * @param id - Service ID
+ * @param data - Partial service update data
+ * @param userId - ID of the updating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated service record
+ * @throws {AppError} If service is not found (404)
+ */
 export async function updateService(
   id: string,
   data: {
@@ -218,6 +249,14 @@ export async function updateService(
   });
 }
 
+/**
+ * Soft-deletes a service by setting deletedAt timestamp.
+ * @param id - Service ID
+ * @param userId - ID of the user performing the deletion
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated service record with deletedAt set
+ * @throws {AppError} If service is not found (404)
+ */
 export async function deleteService(id: string, userId?: string, companyId?: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const s = await prisma.service.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
@@ -228,6 +267,11 @@ export async function deleteService(id: string, userId?: string, companyId?: str
   });
 }
 
+/**
+ * Returns global service types merged with company-specific types.
+ * @param companyId - Tenant isolation company ID; null returns only global types
+ * @returns Array of ServiceType records ordered by nameEn
+ */
 export async function getServiceTypes(companyId: string | null) {
   // Return global types + company-specific types
   return prisma.serviceType.findMany({

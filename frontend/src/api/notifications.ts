@@ -37,11 +37,20 @@ export interface BillingReadyService {
   serviceType: { nameTr: string } | null;
 }
 
+export interface LowStockProduct {
+  id: string;
+  code: string;
+  name: string;
+  stockQuantity: string | null;
+  minStock: string | null;
+}
+
 export interface NotificationSummary {
   overdueInvoices: { count: number; items: OverdueInvoice[] };
   expiredQuotes: { count: number; items: ExpiredQuote[] };
   openComplaints: { count: number; items: OpenComplaint[] };
   billingReadyServices: { count: number; items: BillingReadyService[] };
+  lowStockProducts: { count: number; items: LowStockProduct[] };
   total: number;
 }
 

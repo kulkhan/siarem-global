@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import * as svc from '../services/shipCertificates.service';
 
+/**
+ * Returns all certificates for a ship, ordered by expiry date.
+ * @route GET /api/ships/:id/certificates
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await svc.listCertificates(req.params.id, req.user!.companyId!);
@@ -10,6 +15,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Creates a new certificate for a ship.
+ * @route POST /api/ships/:id/certificates
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const body = req.body as svc.ShipCertificateData;
@@ -24,6 +34,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Updates a ship certificate by ID.
+ * @route PUT /api/ships/:id/certificates/:certId
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const body = req.body as svc.ShipCertificateData;
@@ -38,6 +53,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Permanently deletes a ship certificate and its associated documents.
+ * @route DELETE /api/ships/:id/certificates/:certId
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     await svc.deleteCertificate(req.params.certId, req.user!.companyId!);

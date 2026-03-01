@@ -3,6 +3,11 @@ import { ServiceStatus, Priority } from '@prisma/client';
 import * as svc from '../services/services.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of services.
+ * @route GET /api/services
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -32,6 +37,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Returns a single service with invoices and activity logs.
+ * @route GET /api/services/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -42,6 +52,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Creates a new service record with an initial CREATED log entry.
+ * @route POST /api/services
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -54,6 +69,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Updates a service and appends change entries to the service log.
+ * @route PUT /api/services/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -66,6 +86,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Soft-deletes a service by ID.
+ * @route DELETE /api/services/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -78,6 +103,11 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Returns available service types (global + company-specific).
+ * @route GET /api/services/types
+ * @access authenticate
+ */
 export async function types(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;

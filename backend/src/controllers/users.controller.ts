@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import * as svc from '../services/users.service';
 import { AppError } from '../middleware/error.middleware';
 
+/**
+ * Returns all non-SUPER_ADMIN users for the tenant.
+ * @route GET /api/users
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -12,6 +17,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Creates a new user for the tenant.
+ * @route POST /api/users
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -28,6 +38,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Updates a user's profile; prevents users from changing their own role or deactivating themselves.
+ * @route PUT /api/users/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
@@ -45,6 +60,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Permanently deletes a user; prevents self-deletion.
+ * @route DELETE /api/users/:id
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
@@ -56,6 +76,11 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Changes a user's password; users can change their own, admins can change any.
+ * @route PUT /api/users/:id/password
+ * @access authenticate
+ */
 export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;

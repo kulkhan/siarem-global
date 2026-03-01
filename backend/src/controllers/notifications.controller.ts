@@ -1,6 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
+import { getLowStockProducts } from '../services/productTransactions.service';
 
+/**
+ * Returns a notification summary with overdue invoices, expired quotes, open complaints,
+ * billing-ready services, and low-stock products. Returns empty data for SUPER_ADMIN.
+ * @route GET /api/notifications/summary
+ * @access authenticate
+ */
 export async function getSummary(req: Request, res: Response, next: NextFunction) {
   try {
     const user = req.user!;
@@ -14,6 +21,7 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
           expiredQuotes: { count: 0, items: [] },
           openComplaints: { count: 0, items: [] },
           billingReadyServices: { count: 0, items: [] },
+          lowStockProducts: { count: 0, items: [] },
           total: 0,
         },
       });
@@ -28,6 +36,7 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
       expiredCount, expiredItems,
       complaintsCount, complaintsItems,
       billingCount, billingItems,
+      lowStockItems,
     ] = await Promise.all([
 
       // 1. Geciken faturalar: dueDate geçmiş, ödenmemiş
@@ -99,9 +108,13 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
         orderBy: { updatedAt: 'asc' },
         take: 5,
       }),
+
+      // 5. Kritik stok altındaki ürünler
+      getLowStockProducts(companyId),
     ]);
 
-    const total = overdueCount + expiredCount + complaintsCount + billingCount;
+    const lowStockCount = lowStockItems.length;
+    const total = overdueCount + expiredCount + complaintsCount + billingCount + lowStockCount;
 
     res.json({
       success: true,
@@ -110,6 +123,7 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
         expiredQuotes: { count: expiredCount, items: expiredItems },
         openComplaints: { count: complaintsCount, items: complaintsItems },
         billingReadyServices: { count: billingCount, items: billingItems },
+        lowStockProducts: { count: lowStockCount, items: lowStockItems },
         total,
       },
     });

@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { getContacts, createContact, updateContact, deleteContact } from '../services/contacts.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns all contacts for a customer.
+ * @route GET /api/customers/:customerId/contacts
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -10,6 +15,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new contact for a customer.
+ * @route POST /api/customers/:customerId/contacts
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -20,6 +30,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a contact's fields.
+ * @route PUT /api/customers/:customerId/contacts/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -29,6 +44,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Soft-deletes a contact.
+ * @route DELETE /api/customers/:customerId/contacts/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;

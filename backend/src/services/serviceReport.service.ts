@@ -9,6 +9,12 @@ export interface ServiceReportUpsertData {
   status?: string;
 }
 
+/**
+ * Returns the service report for a given service, or null if none exists.
+ * @param serviceId - Service ID
+ * @param companyId - Tenant isolation company ID
+ * @returns ServiceReport record with creator details, or null
+ */
 export async function getServiceReport(serviceId: string, companyId: string) {
   return prisma.serviceReport.findUnique({
     where: { serviceId },
@@ -16,6 +22,15 @@ export async function getServiceReport(serviceId: string, companyId: string) {
   });
 }
 
+/**
+ * Creates or updates the service report for a service (1:1 relationship).
+ * @param serviceId - Service ID
+ * @param companyId - Tenant isolation company ID
+ * @param userId - ID of the user creating/updating the report
+ * @param data - Report fields (workDone, findings, partsUsed, reportDate, status)
+ * @returns Created or updated ServiceReport record with creator details
+ * @throws {AppError} If the parent service is not found (404)
+ */
 export async function upsertServiceReport(
   serviceId: string,
   companyId: string,

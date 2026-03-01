@@ -94,25 +94,26 @@ model Company {
   companyType  String   @default("MARITIME") @map("company_type")
   modules      String[] @default([]) @map("modules")
 
-  users           User[]
-  customers       Customer[]
-  contacts        Contact[]
-  ships           Ship[]
-  services        Service[]
-  quotes          Quote[]
-  invoices        Invoice[]
-  meetings        Meeting[]
-  documents       Document[]
-  expenses        Expense[]
-  serviceTypes    ServiceType[]
-  shipTypes       ShipType[]
-  auditLogs       AuditLog[]
-  products        Product[]
-  complaints      Complaint[]
-  bankAccounts    CustomerBankAccount[]
-  serviceReports  ServiceReport[]
-  shipCertificates ShipCertificate[]
-  customerNotes   CustomerNote[]
+  users                User[]
+  customers            Customer[]
+  contacts             Contact[]
+  ships                Ship[]
+  services             Service[]
+  quotes               Quote[]
+  invoices             Invoice[]
+  meetings             Meeting[]
+  documents            Document[]
+  expenses             Expense[]
+  serviceTypes         ServiceType[]
+  shipTypes            ShipType[]
+  auditLogs            AuditLog[]
+  products             Product[]
+  complaints           Complaint[]
+  bankAccounts         CustomerBankAccount[]
+  serviceReports       ServiceReport[]
+  shipCertificates     ShipCertificate[]
+  customerNotes        CustomerNote[]
+  productTransactions  ProductTransaction[]
 
   @@map("companies")
 }
@@ -133,21 +134,22 @@ model User {
   updatedAt DateTime @updatedAt
 
   company           Company?           @relation(fields: [companyId], references: [id])
-  assignedServices  Service[]
-  createdMeetings   Meeting[]
-  uploadedDocs      Document[]
-  createdQuotes     Quote[]            @relation("QuoteCreator")
-  createdInvoices   Invoice[]
-  serviceLogs       ServiceLog[]
-  expenses          Expense[]          @relation("ExpenseCreatedBy")
-  createdCustomers  Customer[]         @relation("CustomerCreatedBy")
-  createdShips      Ship[]             @relation("ShipCreatedBy")
-  createdServices   Service[]          @relation("ServiceCreatedBy")
-  createdContacts   Contact[]          @relation("ContactCreatedBy")
-  auditLogs         AuditLog[]
-  assignedCustomers CustomerAssignee[]
-  serviceReports    ServiceReport[]    @relation("ServiceReportCreatedBy")
-  customerNotes     CustomerNote[]     @relation("CustomerNoteUser")
+  assignedServices    Service[]
+  createdMeetings     Meeting[]
+  uploadedDocs        Document[]
+  createdQuotes       Quote[]              @relation("QuoteCreator")
+  createdInvoices     Invoice[]
+  serviceLogs         ServiceLog[]
+  expenses            Expense[]            @relation("ExpenseCreatedBy")
+  createdCustomers    Customer[]           @relation("CustomerCreatedBy")
+  createdShips        Ship[]               @relation("ShipCreatedBy")
+  createdServices     Service[]            @relation("ServiceCreatedBy")
+  createdContacts     Contact[]            @relation("ContactCreatedBy")
+  auditLogs           AuditLog[]
+  assignedCustomers   CustomerAssignee[]
+  serviceReports      ServiceReport[]      @relation("ServiceReportCreatedBy")
+  customerNotes       CustomerNote[]       @relation("CustomerNoteUser")
+  productTransactions ProductTransaction[] @relation("ProductTransactionCreatedBy")
 
   @@unique([companyId, email])
   @@map("users")
@@ -485,10 +487,11 @@ model Invoice {
   service   Service?  @relation(fields: [serviceId], references: [id])
   quote     Quote?    @relation(fields: [quoteId], references: [id])
   createdBy User?     @relation(fields: [createdById], references: [id])
-  payments  Payment[]
-  documents Document[]
-  expenses  Expense[]
-  items     InvoiceItem[]
+  payments            Payment[]
+  documents           Document[]
+  expenses            Expense[]
+  items               InvoiceItem[]
+  productTransactions ProductTransaction[]
 
   @@unique([companyId, refNo])
   @@map("invoices")
@@ -670,26 +673,52 @@ model CustomerAssignee {
 // ─────────────────────────────────────────
 
 model Product {
-  id           String   @id @default(cuid())
-  companyId    String   @map("company_id")
-  code         String
-  name         String
-  nameEn       String?  @map("name_en")
-  unit         String   @default("ADET")
-  unitPriceEur Decimal? @map("unit_price_eur") @db.Decimal(14, 4)
-  unitPriceUsd Decimal? @map("unit_price_usd") @db.Decimal(14, 4)
-  unitPriceTry Decimal? @map("unit_price_try") @db.Decimal(14, 4)
-  description  String?
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(cuid())
+  companyId     String   @map("company_id")
+  code          String
+  name          String
+  nameEn        String?  @map("name_en")
+  unit          String   @default("ADET")
+  unitPriceEur  Decimal? @map("unit_price_eur") @db.Decimal(14, 4)
+  unitPriceUsd  Decimal? @map("unit_price_usd") @db.Decimal(14, 4)
+  unitPriceTry  Decimal? @map("unit_price_try") @db.Decimal(14, 4)
+  description   String?
+  stockQuantity Decimal? @map("stock_quantity") @db.Decimal(14, 4)  // Mevcut stok miktarı
+  minStock      Decimal? @map("min_stock") @db.Decimal(14, 4)       // Kritik stok eşiği
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  company      Company       @relation(fields: [companyId], references: [id])
+  company      Company              @relation(fields: [companyId], references: [id])
   quoteItems   QuoteItem[]
   invoiceItems InvoiceItem[]
+  transactions ProductTransaction[]
 
   @@unique([companyId, code])
   @@map("products")
+}
+
+// ─────────────────────────────────────────
+// PRODUCT TRANSACTIONS (Stok Hareketleri)
+// ─────────────────────────────────────────
+
+model ProductTransaction {
+  id          String   @id @default(cuid())
+  companyId   String   @map("company_id")
+  productId   String   @map("product_id")
+  invoiceId   String?  @map("invoice_id")    // Fatura kaynaklı çıkış için
+  type        String                          // "IN" | "OUT" | "ADJUSTMENT"
+  quantity    Decimal  @db.Decimal(14, 4)    // Pozitif: giriş; negatif: çıkış
+  notes       String?
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  product   Product  @relation(fields: [productId], references: [id])
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdBy User     @relation("ProductTransactionCreatedBy", fields: [createdById], references: [id])
+
+  @@map("product_transactions")
 }
 
 // ─────────────────────────────────────────

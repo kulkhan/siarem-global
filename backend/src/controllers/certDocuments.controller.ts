@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import * as svc from '../services/certDocuments.service';
 
+/**
+ * Returns all documents for a ship certificate.
+ * @route GET /api/ships/:id/certificates/:certId/documents
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response) {
   try {
     const { certId } = req.params;
@@ -12,6 +17,11 @@ export async function list(req: Request, res: Response) {
   }
 }
 
+/**
+ * Uploads a document file and creates a record for a ship certificate.
+ * @route POST /api/ships/:id/certificates/:certId/documents
+ * @access authenticate
+ */
 export async function upload(req: Request, res: Response) {
   try {
     if (!req.file) {
@@ -38,6 +48,11 @@ export async function upload(req: Request, res: Response) {
   }
 }
 
+/**
+ * Deletes a certificate document record and its associated file from disk.
+ * @route DELETE /api/ships/:id/certificates/:certId/documents/:docId
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response) {
   try {
     const { docId } = req.params;

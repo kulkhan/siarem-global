@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/error.middleware';
 import { InvoiceStatus } from '@prisma/client';
+import { createInvoiceOutTransactions } from './productTransactions.service';
 
 export interface InvoiceQuery {
   page: number;
@@ -18,6 +19,12 @@ export interface InvoiceQuery {
 
 const SORT_WHITELIST = ['invoiceDate', 'dueDate', 'amount', 'createdAt', 'status'];
 
+/**
+ * Returns a paginated, filterable list of invoices with customer, service, and payment counts.
+ * @param q - Query options including search, status, currency, date range, sort
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN (all tenants)
+ * @returns Paginated invoice list
+ */
 export async function getInvoices(q: InvoiceQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, serviceId, status, currency, dateFrom, dateTo, sortOrder = 'desc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'invoiceDate';
@@ -85,6 +92,13 @@ export interface InvoiceItemInput {
   sortOrder?: number;
 }
 
+/**
+ * Returns a single invoice by ID with all related data including payments and line items.
+ * @param id - Invoice ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Invoice record with customer, service, payments, and items
+ * @throws {AppError} If invoice is not found (404)
+ */
 export async function getInvoiceById(id: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const inv = await prisma.invoice.findFirst({
@@ -108,6 +122,13 @@ export async function getInvoiceById(id: string, companyId: string | null) {
   return inv;
 }
 
+/**
+ * Creates an invoice and its line items in a single transaction.
+ * @param data - Invoice fields plus optional items array
+ * @param companyId - Tenant isolation company ID
+ * @returns Created invoice record
+ * @throws {AppError} If tenant is missing (400)
+ */
 export async function createInvoice(data: {
   customerId: string;
   serviceId?: string;
@@ -158,6 +179,16 @@ export async function createInvoice(data: {
   });
 }
 
+/**
+ * Updates an invoice and replaces its line items in a transaction.
+ * Triggers stock deduction via createInvoiceOutTransactions when status first moves to SENT.
+ * @param id - Invoice ID
+ * @param data - Partial update data; providing items replaces all existing items
+ * @param userId - ID of the updating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated invoice record
+ * @throws {AppError} If invoice is not found (404)
+ */
 export async function updateInvoice(
   id: string,
   data: {
@@ -183,6 +214,14 @@ export async function updateInvoice(
   if (!existing) throw new AppError('Invoice not found', 404);
 
   const { invoiceDate, dueDate, sentAt, items, ...rest } = data;
+
+  // Fatura ilk kez SENT durumuna geçince stok düşümü yap
+  if (data.status === 'SENT' && existing.status !== 'SENT' && companyId && userId) {
+    // Transaction dışında çağrılır — kendi transaction'ını yönetir
+    createInvoiceOutTransactions(id, companyId, userId).catch((err) => {
+      console.error('[Stock] createInvoiceOutTransactions failed:', err);
+    });
+  }
 
   return prisma.$transaction(async (tx) => {
     const inv = await tx.invoice.update({
@@ -219,6 +258,14 @@ export async function updateInvoice(
   });
 }
 
+/**
+ * Soft-deletes an invoice by setting deletedAt timestamp.
+ * @param id - Invoice ID
+ * @param userId - ID of the user performing the deletion
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated invoice record with deletedAt set
+ * @throws {AppError} If invoice is not found (404)
+ */
 export async function deleteInvoice(id: string, userId?: string, companyId?: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const inv = await prisma.invoice.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
@@ -229,6 +276,13 @@ export async function deleteInvoice(id: string, userId?: string, companyId?: str
   });
 }
 
+/**
+ * Adds a payment to an invoice and automatically updates invoice status (PARTIALLY_PAID / PAID).
+ * @param invoiceId - Invoice ID
+ * @param data - Payment details (amount, currency, paymentDate, method, reference, notes)
+ * @returns Created payment record
+ * @throws {AppError} If invoice is not found (404)
+ */
 export async function addPayment(
   invoiceId: string,
   data: {
@@ -271,6 +325,11 @@ export async function addPayment(
   });
 }
 
+/**
+ * Deletes a payment and recalculates the invoice status based on remaining payments.
+ * @param paymentId - Payment ID
+ * @throws {AppError} If payment is not found (404)
+ */
 export async function deletePayment(paymentId: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
@@ -300,6 +359,14 @@ export async function deletePayment(paymentId: string) {
 
 // ─── Convert quote to draft invoice ─────────────────────────────────────────
 
+/**
+ * Creates a DRAFT invoice from a quote's line items, copying items and determining currency.
+ * @param quoteId - Source quote ID
+ * @param companyId - Tenant isolation company ID
+ * @param userId - ID of the user triggering the conversion
+ * @returns Created draft invoice record
+ * @throws {AppError} If tenant is missing (400) or quote is not found (404)
+ */
 export async function createInvoiceFromQuote(
   quoteId: string,
   companyId: string | null,

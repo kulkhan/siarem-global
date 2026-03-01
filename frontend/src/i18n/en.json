@@ -24,6 +24,7 @@
     "meetings": "Meetings",
     "complaints": "Complaints",
     "expenses": "Expenses",
+    "products": "Products",
     "documents": "Documents",
     "reports": "Reports",
     "settings": "Settings"
@@ -64,7 +65,17 @@
     "selectRow": "Select a row",
     "page": "Page",
     "total": "Total",
-    "reset": "Reset"
+    "count": "Count",
+    "reset": "Reset",
+    "active": "Active",
+    "passive": "Passive",
+    "notes": "Notes",
+    "optional": "Optional",
+    "other": "Other",
+    "required": "Required field",
+    "status": "Status",
+    "customer": "Customer",
+    "errorOccurred": "An error occurred"
   },
   "status": {
     "active": "Active",
@@ -569,5 +580,59 @@
     "placeholder": "Add a note about this customer...",
     "noNotes": "No notes yet",
     "deleteConfirm": "Are you sure you want to delete this note?"
+  },
+  "products": {
+    "title": "Products",
+    "subtitle": "Product catalog and inventory management",
+    "newProduct": "New Product",
+    "editProduct": "Edit Product",
+    "activeLabel": "Active product",
+    "productInfo": "Product Information",
+    "prices": "Prices",
+    "stockSection": "Stock Tracking",
+    "inventory": "Inventory",
+    "stockQuantity": "Stock Quantity",
+    "minStock": "Min. Stock Threshold",
+    "stockStatus": "Stock Status",
+    "stockOk": "Sufficient",
+    "stockLow": "Critical",
+    "stockEmpty": "Out of Stock",
+    "stockUntracked": "Untracked",
+    "fields": {
+      "code": "Product Code",
+      "nameTr": "Turkish Name",
+      "nameEn": "English Name",
+      "unit": "Unit",
+      "description": "Description"
+    },
+    "transactions": {
+      "title": "Stock Movements",
+      "addManual": "Add Manual Entry",
+      "typeLabel": "Movement Type",
+      "typeIn": "In (IN)",
+      "typeOut": "Out (OUT)",
+      "typeAdjustment": "Adjustment",
+      "quantity": "Quantity",
+      "invoiceRef": "Invoice"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "revenue": "Revenue Report",
+    "stock": "Stock Report",
+    "services": "Services Report",
+    "customers": "Customer Report",
+    "period": "Period",
+    "exportCsv": "Download CSV",
+    "revenueMonthly": "Monthly Revenue",
+    "invoiceByStatus": "By Invoice Status",
+    "overdueInvoices": "Overdue Invoices",
+    "servicesByStatus": "By Status",
+    "servicesByPriority": "By Priority",
+    "servicesMonthly": "Monthly Trend",
+    "topCustomersByRevenue": "Top 10 Customers by Revenue",
+    "topCustomersByCount": "Top 10 Customers by Invoice Count",
+    "invoiceCount": "Invoice Count",
+    "totalRevenue": "Total Revenue"
   }
 }

@@ -15,6 +15,7 @@ import serviceTypesRoutes from './serviceTypes.routes';
 import productsRoutes from './products.routes';
 import complaintsRoutes from './complaints.routes';
 import notificationsRoutes from './notifications.routes';
+import reportsRoutes from './reports.routes';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.use('/users', usersRoutes);
 router.use('/audit', auditRoutes);
 router.use('/complaints', complaintsRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/reports', reportsRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Shield, ShieldCheck, ShieldAlert, Pencil, Trash2, KeyRound, Users, ClipboardList, Building2, AlertCircle, Tag, Package } from 'lucide-react';
+import { UserPlus, Shield, ShieldCheck, ShieldAlert, Pencil, Trash2, KeyRound, Users, ClipboardList, Building2, AlertCircle, Tag } from 'lucide-react';
 import { usersApi } from '@/api/users';
 import { useAuthStore } from '@/store/auth.store';
 import { useTenantStore } from '@/store/tenant.store';
@@ -11,7 +11,6 @@ import UserFormDialog from './UserFormDialog';
 import ChangePasswordDialog from './ChangePasswordDialog';
 import AuditLogTab from './AuditLogTab';
 import ServiceTypesTab from './ServiceTypesTab';
-import ProductsTab from './ProductsTab';
 import CompanyProfileTab from './CompanyProfileTab';
 import type { User } from '@/types';
 
@@ -22,7 +21,7 @@ const ROLE_BADGE: Record<string, { label: string; className: string; icon: typeo
   USER:        { label: 'User',        className: 'bg-gray-100 text-gray-600',     icon: Shield },
 };
 
-type Tab = 'users' | 'service-types' | 'products' | 'audit' | 'company';
+type Tab = 'users' | 'service-types' | 'audit' | 'company';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -72,7 +71,6 @@ export default function SettingsPage() {
   const tabs: { id: Tab; label: string; icon: typeof Users; adminOnly?: boolean; superAdminHide?: boolean }[] = [
     { id: 'users', label: t('settings.tabs.users'), icon: Users },
     { id: 'service-types', label: 'Servis Tipleri', icon: Tag, adminOnly: true },
-    { id: 'products', label: 'Ürünler', icon: Package, adminOnly: true },
     { id: 'company', label: 'Firma', icon: Building2, adminOnly: true, superAdminHide: true },
     { id: 'audit', label: t('settings.tabs.audit'), icon: ClipboardList, adminOnly: true },
   ];
@@ -245,9 +243,6 @@ export default function SettingsPage() {
 
       {/* Service Types tab */}
       {tab === 'service-types' && isAdmin && <ServiceTypesTab />}
-
-      {/* Products tab */}
-      {tab === 'products' && isAdmin && <ProductsTab />}
 
       {/* Company tab (ADMIN only, not SUPER_ADMIN) */}
       {tab === 'company' && isAdmin && !isSuperAdmin && <CompanyProfileTab />}

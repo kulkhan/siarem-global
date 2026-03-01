@@ -1,5 +1,12 @@
 import { prisma } from '../lib/prisma';
 
+/**
+ * Aggregates all dashboard statistics for a tenant in a single parallel query.
+ * Includes service/quote/invoice counts, top customers, recent meetings,
+ * monthly revenue (via payments JOIN invoices), and expiring certificates (30 days).
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN (all tenants)
+ * @returns Full dashboard stats object
+ */
 export async function getDashboardStats(companyId: string | null) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

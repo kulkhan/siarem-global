@@ -1,6 +1,14 @@
 import { Request } from 'express';
 import { prisma } from '../lib/prisma';
 
+/**
+ * Records a non-blocking audit log entry from an Express request context.
+ * @param req - Express request (used to extract user, IP, user-agent)
+ * @param entityType - Name of the entity being audited (e.g. 'Customer', 'Ship')
+ * @param action - Type of operation performed
+ * @param entityId - ID of the affected entity
+ * @param changes - Optional object describing field-level changes
+ */
 export async function logAudit(
   req: Request,
   entityType: string,
@@ -48,6 +56,12 @@ export async function logAudit(
   }
 }
 
+/**
+ * Retrieves paginated audit logs with optional filters.
+ * @param params - Filter and pagination options (entityType, action, userId, date range, page, limit)
+ * @param companyId - Tenant isolation company ID; null means SUPER_ADMIN (all tenants)
+ * @returns Paginated audit log entries with total count and page metadata
+ */
 export async function getAuditLogs(params: {
   entityType?: string;
   action?: string;

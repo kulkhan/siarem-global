@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { getMeetings, getMeetingById, createMeeting, updateMeeting, deleteMeeting } from '../services/meetings.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of meetings.
+ * @route GET /api/meetings
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -21,6 +26,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns a single meeting by ID with customer and ship details.
+ * @route GET /api/meetings/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -29,6 +39,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new meeting record.
+ * @route POST /api/meetings
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -39,6 +54,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a meeting's fields by ID.
+ * @route PUT /api/meetings/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -49,6 +69,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Soft-deletes a meeting by ID.
+ * @route DELETE /api/meetings/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;

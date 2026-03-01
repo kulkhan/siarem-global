@@ -10,6 +10,11 @@ export const loginValidation = [
   body('password').notEmpty().withMessage('Password required'),
 ];
 
+/**
+ * Authenticates a user and returns a JWT with company module info.
+ * @route POST /api/auth/login
+ * @access Public
+ */
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -56,6 +61,11 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
+/**
+ * Registers a new tenant (company + ADMIN user) after reCAPTCHA verification.
+ * @route POST /api/auth/register
+ * @access Public
+ */
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { companyName, slug, adminName, adminEmail, adminPassword, recaptchaToken } = req.body as {
@@ -85,6 +95,11 @@ export async function register(req: Request, res: Response, next: NextFunction):
   }
 }
 
+/**
+ * Returns the currently authenticated user's profile and company modules.
+ * @route GET /api/auth/me
+ * @access authenticate
+ */
 export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = await getCurrentUser(req.user!.sub);
@@ -94,6 +109,11 @@ export async function getMe(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
+/**
+ * Logs out the current user (client-side token invalidation; stateless JWT).
+ * @route POST /api/auth/logout
+ * @access authenticate
+ */
 export function logout(_req: Request, res: Response): void {
   res.json({ success: true, message: 'Logged out' });
 }

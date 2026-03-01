@@ -24,6 +24,12 @@ async function generateQuoteNumber(quoteDate: Date, companyId: string): Promise<
   return `${seq}-ODDYSHIP-${dd}${mm}${yyyy}`;
 }
 
+/**
+ * Returns a paginated, filterable list of quotes with customer, service, and invoice counts.
+ * @param q - Query options including search, customerId, serviceId, status, sort
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN (all tenants)
+ * @returns Paginated quote list
+ */
 export async function getQuotes(q: QuoteQuery, companyId: string | null) {
   const { page, pageSize, search, customerId, serviceId, status, sortOrder = 'desc' } = q;
   const sortBy = SORT_WHITELIST.includes(q.sortBy ?? '') ? q.sortBy! : 'quoteDate';
@@ -82,6 +88,13 @@ export interface QuoteItemInput {
   sortOrder?: number;
 }
 
+/**
+ * Returns a single quote by ID with customer, service, ships, invoices, and line items.
+ * @param id - Quote ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @returns Quote record with all related data
+ * @throws {AppError} If quote is not found (404)
+ */
 export async function getQuoteById(id: string, companyId: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const quote = await prisma.quote.findFirst({
@@ -105,6 +118,13 @@ export async function getQuoteById(id: string, companyId: string | null) {
   return quote;
 }
 
+/**
+ * Creates a quote and its line items in a single transaction; auto-generates quoteNumber if not provided.
+ * @param data - Quote fields plus optional items array
+ * @param companyId - Tenant isolation company ID
+ * @returns Created quote record
+ * @throws {AppError} If tenant is missing (400)
+ */
 export async function createQuote(data: {
   customerId: string;
   serviceId?: string;
@@ -157,6 +177,15 @@ export async function createQuote(data: {
   });
 }
 
+/**
+ * Updates a quote and replaces its line items in a transaction.
+ * @param id - Quote ID
+ * @param data - Partial update data; providing items replaces all existing items
+ * @param userId - ID of the updating user
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated quote record
+ * @throws {AppError} If quote is not found (404)
+ */
 export async function updateQuote(
   id: string,
   data: {
@@ -217,6 +246,14 @@ export async function updateQuote(
   });
 }
 
+/**
+ * Soft-deletes a quote by setting deletedAt timestamp.
+ * @param id - Quote ID
+ * @param userId - ID of the user performing the deletion
+ * @param companyId - Tenant isolation company ID
+ * @returns Updated quote record with deletedAt set
+ * @throws {AppError} If quote is not found (404)
+ */
 export async function deleteQuote(id: string, userId?: string, companyId?: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const q = await prisma.quote.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });

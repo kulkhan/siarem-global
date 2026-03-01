@@ -12,6 +12,12 @@ export interface RegisterTenantData {
   adminPassword: string;
 }
 
+/**
+ * Registers a new tenant by creating a company and its first ADMIN user.
+ * @param data - Registration details including company name, slug, and admin credentials
+ * @returns Created company summary (id, name, slug, domain)
+ * @throws {AppError} If slug/domain/email is already in use
+ */
 export async function registerTenant(data: RegisterTenantData) {
   const slugClean = data.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!slugClean) throw new AppError('Geçerli bir firma kodu girin', 400);
@@ -26,7 +32,7 @@ export async function registerTenant(data: RegisterTenantData) {
   const domainExists = await prisma.company.findUnique({ where: { domain } });
   if (domainExists) throw new AppError('Bu domain zaten kullanımda', 400);
 
-  const hashedPw = await bcrypt.hash(data.adminPassword, 10);
+  const hashedPw = await bcrypt.hash(data.adminPassword, 12);
 
   const company = await prisma.company.create({
     data: { name: data.companyName, slug: slugClean, domain, plan: 'free', isActive: true },
@@ -46,6 +52,14 @@ export async function registerTenant(data: RegisterTenantData) {
   return { company: { id: company.id, name: company.name, slug: company.slug, domain: company.domain } };
 }
 
+/**
+ * Authenticates a user and returns a signed JWT with company module info.
+ * @param email - User's email address
+ * @param password - Plain-text password to verify against stored hash
+ * @param companyId - Tenant company ID; null triggers SUPER_ADMIN login path
+ * @returns JWT token and user profile including companyModules
+ * @throws {AppError} If credentials are invalid or user is inactive (401)
+ */
 export async function loginUser(email: string, password: string, companyId: string | null) {
   let user;
 
@@ -105,6 +119,12 @@ export async function loginUser(email: string, password: string, companyId: stri
   };
 }
 
+/**
+ * Retrieves the current authenticated user's profile and company modules.
+ * @param userId - The authenticated user's ID (from JWT sub)
+ * @returns User profile with companyModules array for sidebar filtering
+ * @throws {AppError} If user is not found or inactive (404)
+ */
 export async function getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },

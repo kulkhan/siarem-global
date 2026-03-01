@@ -3,6 +3,11 @@ import { QuoteStatus } from '@prisma/client';
 import * as svc from '../services/quotes.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of quotes.
+ * @route GET /api/quotes
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -25,6 +30,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Returns a single quote with ships, invoices, and line items.
+ * @route GET /api/quotes/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -35,6 +45,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Creates a new quote with optional line items.
+ * @route POST /api/quotes
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -47,6 +62,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Updates a quote and replaces line items.
+ * @route PUT /api/quotes/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -59,6 +79,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Soft-deletes a quote by ID.
+ * @route DELETE /api/quotes/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;

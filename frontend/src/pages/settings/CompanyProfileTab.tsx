@@ -39,6 +39,12 @@ export default function CompanyProfileTab() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
 
+  const { data: company, isLoading } = useQuery({
+    queryKey: ['own-company'],
+    queryFn: getOwnCompany,
+    enabled: !!me?.companyId,
+  });
+
   const complaintUrl = company?.slug
     ? `${window.location.origin}/complaint/${company.slug}`
     : null;
@@ -49,12 +55,6 @@ export default function CompanyProfileTab() {
     setUrlCopied(true);
     setTimeout(() => setUrlCopied(false), 2000);
   }
-
-  const { data: company, isLoading } = useQuery({
-    queryKey: ['own-company'],
-    queryFn: getOwnCompany,
-    enabled: !!me?.companyId,
-  });
 
   const { register, handleSubmit, reset, formState: { isDirty, isSubmitting } } = useForm<CompanySelfUpdate>();
 

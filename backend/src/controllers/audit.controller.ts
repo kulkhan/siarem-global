@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { getAuditLogs } from '../services/audit.service';
 
+/**
+ * Returns paginated audit logs filtered by entity type, action, user, and date range.
+ * @route GET /api/audit
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;

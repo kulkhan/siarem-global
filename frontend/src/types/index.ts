@@ -105,9 +105,27 @@ export interface Product {
   unitPriceUsd: number | null;
   unitPriceTry: number | null;
   description: string | null;
+  stockQuantity: number | null;
+  minStock: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ProductTransactionType = 'IN' | 'OUT' | 'ADJUSTMENT';
+
+export interface ProductTransaction {
+  id: string;
+  companyId: string;
+  productId: string;
+  invoiceId: string | null;
+  type: ProductTransactionType;
+  quantity: number;
+  notes: string | null;
+  createdById: string;
+  createdAt: string;
+  createdBy?: { id: string; name: string };
+  invoice?: { id: string; refNo: string | null } | null;
 }
 
 export interface QuoteItem {

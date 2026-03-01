@@ -24,6 +24,7 @@
     "meetings": "Toplantılar",
     "complaints": "Şikayetler",
     "expenses": "Masraflar",
+    "products": "Ürünler",
     "documents": "Dokümanlar",
     "reports": "Raporlar",
     "settings": "Ayarlar"
@@ -64,7 +65,17 @@
     "selectRow": "Bir satır seçin",
     "page": "Sayfa",
     "total": "Toplam",
-    "reset": "Sıfırla"
+    "count": "Adet",
+    "reset": "Sıfırla",
+    "active": "Aktif",
+    "passive": "Pasif",
+    "notes": "Notlar",
+    "optional": "İsteğe bağlı",
+    "other": "Diğer",
+    "required": "Zorunlu alan",
+    "status": "Durum",
+    "customer": "Müşteri",
+    "errorOccurred": "Bir hata oluştu"
   },
   "status": {
     "active": "Aktif",
@@ -580,5 +591,59 @@
     "placeholder": "Müşteri hakkında not ekleyin...",
     "noNotes": "Henüz not eklenmemiş",
     "deleteConfirm": "Bu notu silmek istediğinizden emin misiniz?"
+  },
+  "products": {
+    "title": "Ürünler",
+    "subtitle": "Ürün kataloğu ve stok yönetimi",
+    "newProduct": "Yeni Ürün",
+    "editProduct": "Ürün Düzenle",
+    "activeLabel": "Aktif ürün",
+    "productInfo": "Ürün Bilgileri",
+    "prices": "Fiyatlar",
+    "stockSection": "Stok Takibi",
+    "inventory": "Envanter",
+    "stockQuantity": "Stok Miktarı",
+    "minStock": "Min. Stok Eşiği",
+    "stockStatus": "Stok Durumu",
+    "stockOk": "Yeterli",
+    "stockLow": "Kritik",
+    "stockEmpty": "Tükendi",
+    "stockUntracked": "Takip Yok",
+    "fields": {
+      "code": "Ürün Kodu",
+      "nameTr": "Türkçe Ad",
+      "nameEn": "İngilizce Ad",
+      "unit": "Birim",
+      "description": "Açıklama"
+    },
+    "transactions": {
+      "title": "Stok Hareketleri",
+      "addManual": "Manuel Hareket Ekle",
+      "typeLabel": "Hareket Türü",
+      "typeIn": "Giriş (IN)",
+      "typeOut": "Çıkış (OUT)",
+      "typeAdjustment": "Düzeltme",
+      "quantity": "Miktar",
+      "invoiceRef": "Fatura"
+    }
+  },
+  "reports": {
+    "title": "Raporlar",
+    "revenue": "Gelir Raporu",
+    "stock": "Stok Raporu",
+    "services": "Servis Raporu",
+    "customers": "Müşteri Raporu",
+    "period": "Dönem",
+    "exportCsv": "CSV İndir",
+    "revenueMonthly": "Aylık Gelir",
+    "invoiceByStatus": "Fatura Durumlarına Göre",
+    "overdueInvoices": "Gecikmiş Faturalar",
+    "servicesByStatus": "Durum Dağılımı",
+    "servicesByPriority": "Öncelik Dağılımı",
+    "servicesMonthly": "Aylık Servis Trendi",
+    "topCustomersByRevenue": "Gelire Göre Top 10 Müşteri",
+    "topCustomersByCount": "Fatura Sayısına Göre Top 10 Müşteri",
+    "invoiceCount": "Fatura Adedi",
+    "totalRevenue": "Toplam Gelir"
   }
 }

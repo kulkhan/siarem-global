@@ -6,6 +6,11 @@ import {
 import { ShipStatus } from '@prisma/client';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of ships.
+ * @route GET /api/ships
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -25,6 +30,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns a single ship with customer, ship type, and service count.
+ * @route GET /api/ships/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -33,6 +43,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new ship with numeric field coercion (shipTypeId, tonnage, builtYear).
+ * @route POST /api/ships
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -51,6 +66,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a ship with numeric field coercion.
+ * @route PUT /api/ships/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -69,6 +89,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Soft-deletes a ship by ID.
+ * @route DELETE /api/ships/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
@@ -79,6 +104,11 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns global and company-specific ship types.
+ * @route GET /api/ships/types
+ * @access authenticate
+ */
 export async function shipTypeList(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -87,6 +117,11 @@ export async function shipTypeList(req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns distinct flag values from ships for filter dropdowns.
+ * @route GET /api/ships/options/flags
+ * @access authenticate
+ */
 export async function flagOptions(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId ?? null;

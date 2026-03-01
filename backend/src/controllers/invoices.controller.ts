@@ -3,6 +3,11 @@ import { InvoiceStatus } from '@prisma/client';
 import * as svc from '../services/invoices.service';
 import { logAudit } from '../services/audit.service';
 
+/**
+ * Returns a paginated, filterable list of invoices.
+ * @route GET /api/invoices
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -31,6 +36,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Returns a single invoice with payments and line items.
+ * @route GET /api/invoices/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -41,6 +51,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Creates a new invoice with optional line items.
+ * @route POST /api/invoices
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -53,6 +68,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Updates an invoice; triggers stock deduction when status first changes to SENT.
+ * @route PUT /api/invoices/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -65,6 +85,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Soft-deletes an invoice by ID.
+ * @route DELETE /api/invoices/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
@@ -77,6 +102,11 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/**
+ * Adds a payment to an invoice and recalculates invoice status.
+ * @route POST /api/invoices/:id/payments
+ * @access authenticate
+ */
 export async function createPayment(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await svc.addPayment(req.params.id, req.body);
@@ -86,6 +116,11 @@ export async function createPayment(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Deletes a payment and recalculates invoice status.
+ * @route DELETE /api/invoices/:id/payments/:paymentId
+ * @access authenticate
+ */
 export async function removePayment(req: Request, res: Response, next: NextFunction) {
   try {
     await svc.deletePayment(req.params.paymentId);
@@ -95,6 +130,11 @@ export async function removePayment(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Creates a DRAFT invoice from a quote's line items.
+ * @route POST /api/quotes/:id/convert-to-invoice
+ * @access authenticate
+ */
 export async function convertFromQuote(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;

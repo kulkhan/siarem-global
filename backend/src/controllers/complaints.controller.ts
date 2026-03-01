@@ -3,6 +3,11 @@ import { ComplaintStatus, ComplaintType } from '@prisma/client';
 import * as svc from '../services/complaints.service';
 import { verifyRecaptcha } from '../lib/recaptcha';
 
+/**
+ * Returns a paginated, filterable list of complaints.
+ * @route GET /api/complaints
+ * @access authenticate
+ */
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -17,6 +22,11 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Returns a single complaint by ID.
+ * @route GET /api/complaints/:id
+ * @access authenticate
+ */
 export async function getOne(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -25,6 +35,11 @@ export async function getOne(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a new complaint for the authenticated user's company.
+ * @route POST /api/complaints
+ * @access authenticate
+ */
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId;
@@ -34,6 +49,11 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Updates a complaint's fields by ID.
+ * @route PUT /api/complaints/:id
+ * @access authenticate
+ */
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -42,6 +62,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Permanently deletes a complaint by ID.
+ * @route DELETE /api/complaints/:id
+ * @access authenticate
+ */
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const companyId = req.user?.companyId ?? null;
@@ -50,6 +75,11 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   } catch (err) { next(err); }
 }
 
+/**
+ * Creates a complaint submitted from the public-facing form; requires reCAPTCHA verification.
+ * @route POST /api/complaints/public
+ * @access Public
+ */
 // Public endpoint — no auth required
 export async function publicCreate(req: Request, res: Response, next: NextFunction) {
   try {

@@ -6,6 +6,11 @@ import { AppError } from '../middleware/error.middleware';
 import { env } from '../config/env';
 import { prisma } from '../lib/prisma';
 
+/**
+ * Returns all companies with user and customer counts.
+ * @route GET /api/companies
+ * @access authenticate | requireRole('SUPER_ADMIN')
+ */
 export async function listCompanies(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await companiesService.getCompanies();
@@ -15,6 +20,11 @@ export async function listCompanies(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Returns a single company by ID with users and entity counts.
+ * @route GET /api/companies/:id
+ * @access authenticate | requireRole('SUPER_ADMIN')
+ */
 export async function getCompany(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await companiesService.getCompanyById(req.params.id);
@@ -24,6 +34,11 @@ export async function getCompany(req: Request, res: Response, next: NextFunction
   }
 }
 
+/**
+ * Returns the authenticated user's own company profile.
+ * @route GET /api/companies/own
+ * @access authenticate
+ */
 export async function getOwnCompany(req: Request, res: Response, next: NextFunction) {
   try {
     const user = req.user!;
@@ -35,6 +50,11 @@ export async function getOwnCompany(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Updates the authenticated ADMIN's own company profile (safe fields only).
+ * @route PATCH /api/companies/own
+ * @access authenticate | requireRole('ADMIN')
+ */
 export async function updateOwnCompany(req: Request, res: Response, next: NextFunction) {
   try {
     const user = req.user!;
@@ -52,6 +72,11 @@ export async function updateOwnCompany(req: Request, res: Response, next: NextFu
   }
 }
 
+/**
+ * Creates a new company.
+ * @route POST /api/companies
+ * @access authenticate | requireRole('SUPER_ADMIN')
+ */
 export async function createCompany(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await companiesService.createCompany(req.body);
@@ -61,6 +86,11 @@ export async function createCompany(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Updates a company by ID.
+ * @route PUT /api/companies/:id
+ * @access authenticate | requireRole('SUPER_ADMIN')
+ */
 export async function updateCompany(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await companiesService.updateCompany(req.params.id, req.body);
@@ -70,6 +100,11 @@ export async function updateCompany(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Permanently deletes a company by ID.
+ * @route DELETE /api/companies/:id
+ * @access authenticate | requireRole('SUPER_ADMIN')
+ */
 export async function deleteCompany(req: Request, res: Response, next: NextFunction) {
   try {
     await companiesService.deleteCompany(req.params.id);
@@ -79,6 +114,11 @@ export async function deleteCompany(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Updates a company's type and enabled module list.
+ * @route PUT /api/companies/:id/modules
+ * @access authenticate | requireRole('SUPER_ADMIN')
+ */
 export async function updateModules(req: Request, res: Response, next: NextFunction) {
   try {
     const { companyType, modules } = req.body as { companyType: string; modules: string[] };
@@ -89,6 +129,11 @@ export async function updateModules(req: Request, res: Response, next: NextFunct
   }
 }
 
+/**
+ * Uploads a company logo image and updates the company's logoUrl; deletes old file if present.
+ * @route POST /api/companies/:id/logo
+ * @access authenticate | requireRole('ADMIN') for own company; SUPER_ADMIN for any
+ */
 export async function uploadLogo(req: Request, res: Response, next: NextFunction) {
   const cleanup = () => {
     if (req.file) try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }

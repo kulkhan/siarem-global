@@ -2,11 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, FileText, MessageSquare, Wrench,
-  CheckCircle, ChevronRight, X,
+  CheckCircle, ChevronRight, X, Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getNotificationSummary } from '@/api/notifications';
-import type { OverdueInvoice, ExpiredQuote, OpenComplaint, BillingReadyService } from '@/api/notifications';
+import type { OverdueInvoice, ExpiredQuote, OpenComplaint, BillingReadyService, LowStockProduct } from '@/api/notifications';
 
 interface Props {
   onClose: () => void;
@@ -198,6 +198,45 @@ export default function NotificationPanel({ onClose }: Props) {
                     </span>
                   </button>
                 ))}
+              </Section>
+            )}
+
+            {/* ── Kritik Stok Ürünler ─────────────────── */}
+            {(data!.lowStockProducts?.count ?? 0) > 0 && (
+              <Section
+                icon={<Package className="w-3.5 h-3.5" />}
+                label="Kritik Stok"
+                count={data!.lowStockProducts.count}
+                colorClass="text-yellow-700 bg-yellow-50 border-yellow-300"
+                onViewAll={() => go('/products')}
+              >
+                {data!.lowStockProducts.items.map((p: LowStockProduct) => {
+                  const qty = p.stockQuantity != null ? Number(p.stockQuantity) : null;
+                  const isEmpty = qty != null && qty <= 0;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => go('/products')}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-yellow-50/50 transition-colors text-left"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-gray-800 truncate">{p.name}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          {p.code} · Stok: {qty ?? '—'}
+                          {p.minStock != null && ` / Min: ${p.minStock}`}
+                        </p>
+                      </div>
+                      <span className={cn(
+                        'text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 whitespace-nowrap',
+                        isEmpty
+                          ? 'text-red-600 bg-red-100 border-red-200'
+                          : 'text-yellow-700 bg-yellow-100 border-yellow-300'
+                      )}>
+                        {isEmpty ? 'Tükendi' : 'Kritik'}
+                      </span>
+                    </button>
+                  );
+                })}
               </Section>
             )}
           </div>

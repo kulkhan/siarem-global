@@ -1,6 +1,11 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/error.middleware';
 
+/**
+ * Returns global service types and company-specific types merged together.
+ * @param companyId - Tenant isolation company ID; null returns only global types
+ * @returns Array of ServiceType records ordered by companyId then nameEn
+ */
 export async function getServiceTypes(companyId: string | null) {
   return prisma.serviceType.findMany({
     where: { OR: [{ companyId: null }, ...(companyId ? [{ companyId }] : [])] },
@@ -8,6 +13,13 @@ export async function getServiceTypes(companyId: string | null) {
   });
 }
 
+/**
+ * Creates a service type; SUPER_ADMIN can create global types (companyId=null).
+ * @param data - Service type fields including optional isGlobal flag
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @param isSuperAdmin - Whether the caller is SUPER_ADMIN
+ * @returns Created ServiceType record
+ */
 export async function createServiceType(
   data: { nameEn: string; nameTr: string; code: string; category?: string; description?: string; isGlobal?: boolean },
   companyId: string | null,
@@ -26,6 +38,15 @@ export async function createServiceType(
   });
 }
 
+/**
+ * Updates a service type; global types can only be edited by SUPER_ADMIN.
+ * @param id - ServiceType integer ID
+ * @param data - Partial update data
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @param isSuperAdmin - Whether the caller is SUPER_ADMIN
+ * @returns Updated ServiceType record
+ * @throws {AppError} If not found (404), or insufficient permissions (403)
+ */
 export async function updateServiceType(
   id: number,
   data: { nameEn?: string; nameTr?: string; code?: string; category?: string; description?: string },
@@ -56,6 +77,14 @@ export async function updateServiceType(
   });
 }
 
+/**
+ * Permanently deletes a service type; global types can only be deleted by SUPER_ADMIN.
+ * @param id - ServiceType integer ID
+ * @param companyId - Tenant isolation company ID; null for SUPER_ADMIN
+ * @param isSuperAdmin - Whether the caller is SUPER_ADMIN
+ * @returns Deleted ServiceType record
+ * @throws {AppError} If not found (404), or insufficient permissions (403)
+ */
 export async function deleteServiceType(id: number, companyId: string | null, isSuperAdmin: boolean) {
   const existing = await prisma.serviceType.findUnique({ where: { id } });
   if (!existing) throw new AppError('Servis tipi bulunamadı', 404);

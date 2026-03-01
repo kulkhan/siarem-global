@@ -16,6 +16,8 @@ import SettingsPage from '@/pages/settings/SettingsPage';
 import CompaniesPage from '@/pages/admin/CompaniesPage';
 import ComplaintsPage from '@/pages/complaints/ComplaintsPage';
 import PublicComplaintPage from '@/pages/public/PublicComplaintPage';
+import ProductsPage from '@/pages/products/ProductsPage';
+import ReportsPage from '@/pages/reports/ReportsPage';
 import LandingPage from '@/pages/public/LandingPage';
 import SubscribePage from '@/pages/public/SubscribePage';
 import { useAuthStore } from '@/store/auth.store';
@@ -72,8 +74,9 @@ export default function App() {
             <Route path="/meetings/*" element={<MeetingsPage />} />
             <Route path="/expenses/*" element={<AdminOnly><ExpensesPage /></AdminOnly>} />
             <Route path="/complaints/*" element={<ComplaintsPage />} />
+            <Route path="/products/*" element={<AdminOnly><ProductsPage /></AdminOnly>} />
             <Route path="/documents/*" element={<Placeholder name="Documents" />} />
-            <Route path="/reports/*" element={<Placeholder name="Reports" />} />
+            <Route path="/reports/*" element={<ReportsPage />} />
             <Route path="/settings/*" element={<AdminOnly><SettingsPage /></AdminOnly>} />
             <Route path="/admin/companies" element={<SuperAdminOnly><CompaniesPage /></SuperAdminOnly>} />
           </Route>
