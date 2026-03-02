@@ -634,5 +634,39 @@
     "topCustomersByCount": "Top 10 Customers by Invoice Count",
     "invoiceCount": "Invoice Count",
     "totalRevenue": "Total Revenue"
+  },
+  "import": {
+    "title": "Data Import",
+    "subtitle": "Import your existing data into the system using Excel templates",
+    "downloadTemplate": "Download Template",
+    "uploadFile": "Select Excel File",
+    "dropOrClick": "Drop file here or click to browse",
+    "preview": "Preview",
+    "confirm": "Confirm Import",
+    "back": "Back",
+    "newImport": "New Import",
+    "processing": "Processing...",
+    "saving": "Saving...",
+    "validRows": "Valid Rows",
+    "skippedRows": "Skipped (Duplicate)",
+    "errorRows": "Error Rows",
+    "importedCount": "records imported",
+    "noValidRows": "No valid rows to import",
+    "rowNum": "Row",
+    "reason": "Reason",
+    "instructions": {
+      "title": "How to Import",
+      "step1": "Download the Excel template below",
+      "step2": "Open the template and fill in your data (* required fields)",
+      "step3": "Upload the filled file and click Preview",
+      "step4": "Review the preview, then click Confirm to save"
+    },
+    "entities": {
+      "customers": "Customers",
+      "products": "Products",
+      "quotes": "Quotes",
+      "invoices": "Invoices",
+      "services": "Services"
+    }
   }
 }

@@ -645,5 +645,39 @@
     "topCustomersByCount": "Fatura Sayısına Göre Top 10 Müşteri",
     "invoiceCount": "Fatura Adedi",
     "totalRevenue": "Toplam Gelir"
+  },
+  "import": {
+    "title": "Veri Aktarımı",
+    "subtitle": "Excel şablonlarıyla mevcut verilerinizi sisteme aktarın",
+    "downloadTemplate": "Şablon İndir",
+    "uploadFile": "Excel Dosyası Seç",
+    "dropOrClick": "Dosyayı buraya bırakın ya da tıklayın",
+    "preview": "Önizle",
+    "confirm": "İçe Aktarımı Onayla",
+    "back": "Geri",
+    "newImport": "Yeni Aktarım",
+    "processing": "İşleniyor...",
+    "saving": "Kaydediliyor...",
+    "validRows": "Geçerli Satır",
+    "skippedRows": "Atlanacak (Duplicate)",
+    "errorRows": "Hatalı Satır",
+    "importedCount": "kayıt aktarıldı",
+    "noValidRows": "İçe aktarılacak geçerli satır yok",
+    "rowNum": "Satır",
+    "reason": "Neden",
+    "instructions": {
+      "title": "Nasıl Yapılır?",
+      "step1": "Aşağıdan Excel şablonunu indirin",
+      "step2": "Şablonu açın ve verilerinizi girin (* zorunlu alanlar)",
+      "step3": "Doldurulan dosyayı yükleyin ve Önizle'ye tıklayın",
+      "step4": "Önizlemeyi inceleyin, ardından Onayla ile kaydedin"
+    },
+    "entities": {
+      "customers": "Müşteriler",
+      "products": "Ürünler",
+      "quotes": "Teklifler",
+      "invoices": "Faturalar",
+      "services": "Hizmetler"
+    }
   }
 }

@@ -6,6 +6,7 @@ import { servicesApi, type ServiceInvoice, type ServiceLog } from '@/api/service
 import { getOwnCompany } from '@/api/companies';
 import { printService } from '@/utils/printDocument';
 import ServiceReportDialog from './ServiceReportDialog';
+import { useAuthStore } from '@/store/auth.store';
 
 // ── Billing pipeline ─────────────────────────────────────────────────────────
 
@@ -200,6 +201,8 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [reportOpen, setReportOpen] = useState(false);
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const { data: res, isLoading } = useQuery({
     queryKey: ['service-detail', serviceId],
@@ -211,6 +214,7 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
     queryKey: ['own-company'],
     queryFn: getOwnCompany,
     staleTime: 5 * 60 * 1000,
+    enabled: !isSuperAdmin && !!user,
   });
 
   const svc = res;

@@ -113,7 +113,16 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
       getLowStockProducts(companyId),
     ]);
 
-    const lowStockCount = lowStockItems.length;
+    // Raw SQL returns snake_case — remap to camelCase for the frontend
+    const lowStockMapped = lowStockItems.map((p) => ({
+      id: p.id,
+      code: p.code,
+      name: p.name,
+      stockQuantity: p.stock_quantity,
+      minStock: p.min_stock,
+    }));
+
+    const lowStockCount = lowStockMapped.length;
     const total = overdueCount + expiredCount + complaintsCount + billingCount + lowStockCount;
 
     res.json({
@@ -123,7 +132,7 @@ export async function getSummary(req: Request, res: Response, next: NextFunction
         expiredQuotes: { count: expiredCount, items: expiredItems },
         openComplaints: { count: complaintsCount, items: complaintsItems },
         billingReadyServices: { count: billingCount, items: billingItems },
-        lowStockProducts: { count: lowStockCount, items: lowStockItems },
+        lowStockProducts: { count: lowStockCount, items: lowStockMapped },
         total,
       },
     });

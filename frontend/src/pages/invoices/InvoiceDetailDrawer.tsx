@@ -6,6 +6,7 @@ import { invoicesApi, type Payment } from '@/api/invoices';
 import { Input } from '@/components/ui/input';
 import { getOwnCompany } from '@/api/companies';
 import { printInvoice } from '@/utils/printDocument';
+import { useAuthStore } from '@/store/auth.store';
 
 // ── Status colors ──────────────────────────────────────────────────────────────
 
@@ -44,6 +45,8 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const qc = useQueryClient();
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [paymentForm, setPaymentForm] = useState<PaymentFormState>({
@@ -64,6 +67,7 @@ export default function InvoiceDetailDrawer({ invoiceId, onClose, onEdit }: Prop
     queryKey: ['own-company'],
     queryFn: getOwnCompany,
     staleTime: 5 * 60 * 1000,
+    enabled: !isSuperAdmin && !!user,
   });
 
   const deleteMutation = useMutation({
