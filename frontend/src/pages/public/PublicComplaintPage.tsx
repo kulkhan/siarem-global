@@ -9,6 +9,7 @@ import { submitPublicComplaint, type ComplaintType } from '@/api/complaints';
 
 // Google reCAPTCHA v2 — test site key (always passes). Replace via VITE_RECAPTCHA_SITE_KEY in production.
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MuLw16k3';
+const IS_DEV = import.meta.env.DEV;
 
 const schema = z.object({
   contactName: z.string().min(1, 'Ad Soyad zorunludur'),
@@ -40,8 +41,8 @@ export default function PublicComplaintPage() {
     setServerError('');
     setCaptchaError('');
 
-    const recaptchaToken = recaptchaRef.current?.getValue();
-    if (!recaptchaToken) {
+    const recaptchaToken = IS_DEV ? 'dev-bypass' : (recaptchaRef.current?.getValue() ?? undefined);
+    if (!IS_DEV && !recaptchaToken) {
       setCaptchaError('Lütfen CAPTCHA doğrulamasını tamamlayın.');
       return;
     }
@@ -178,17 +179,19 @@ export default function PublicComplaintPage() {
               )}
             </div>
 
-            {/* reCAPTCHA */}
-            <div className="flex flex-col items-center gap-1">
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={RECAPTCHA_SITE_KEY}
-                onChange={() => setCaptchaError('')}
-              />
-              {captchaError && (
-                <p className="text-xs text-red-500 self-start">{captchaError}</p>
-              )}
-            </div>
+            {/* reCAPTCHA — hidden in dev */}
+            {!IS_DEV && (
+              <div className="flex flex-col items-center gap-1">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={() => setCaptchaError('')}
+                />
+                {captchaError && (
+                  <p className="text-xs text-red-500 self-start">{captchaError}</p>
+                )}
+              </div>
+            )}
 
             {/* Server error */}
             {serverError && (

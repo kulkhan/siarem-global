@@ -8,6 +8,9 @@ import { env } from '../config/env';
  */
 export function verifyRecaptcha(token: string): Promise<boolean> {
   return new Promise((resolve) => {
+    // In non-production environments skip the network call entirely
+    if (process.env.NODE_ENV !== 'production') return resolve(true);
+
     if (!token) return resolve(false);
 
     const body = `secret=${encodeURIComponent(env.recaptchaSecret)}&response=${encodeURIComponent(token)}`;

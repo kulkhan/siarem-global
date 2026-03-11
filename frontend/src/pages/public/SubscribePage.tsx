@@ -10,6 +10,7 @@ import api from '@/lib/api';
 
 // Google reCAPTCHA v2 — test site key (always passes). Replace via VITE_RECAPTCHA_SITE_KEY in production.
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MuLw16k3';
+const IS_DEV = import.meta.env.DEV;
 
 function slugify(name: string) {
   return name
@@ -71,8 +72,8 @@ export default function SubscribePage() {
     setServerError('');
     setCaptchaError('');
 
-    const recaptchaToken = recaptchaRef.current?.getValue();
-    if (!recaptchaToken) {
+    const recaptchaToken = IS_DEV ? 'dev-bypass' : recaptchaRef.current?.getValue();
+    if (!IS_DEV && !recaptchaToken) {
       setCaptchaError(t('subscribe.captchaError'));
       return;
     }
@@ -243,17 +244,19 @@ export default function SubscribePage() {
               </div>
             </div>
 
-            {/* reCAPTCHA */}
-            <div className="flex flex-col items-center gap-1 py-1">
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={RECAPTCHA_SITE_KEY}
-                onChange={() => setCaptchaError('')}
-              />
-              {captchaError && (
-                <p className="text-xs text-red-500 self-start">{captchaError}</p>
-              )}
-            </div>
+            {/* reCAPTCHA — hidden in dev */}
+            {!IS_DEV && (
+              <div className="flex flex-col items-center gap-1 py-1">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={() => setCaptchaError('')}
+                />
+                {captchaError && (
+                  <p className="text-xs text-red-500 self-start">{captchaError}</p>
+                )}
+              </div>
+            )}
 
             {serverError && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">
