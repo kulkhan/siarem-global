@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useTenantStore } from '@/store/tenant.store';
+import { useAuthStore } from '@/store/auth.store';
 
 const api = axios.create({
   baseURL: '/api',
@@ -29,7 +30,7 @@ api.interceptors.response.use(
   (error) => {
     const isAuthEndpoint = (error.config?.url as string | undefined)?.includes('/auth/');
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      localStorage.removeItem('token');
+      useAuthStore.getState().clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);
