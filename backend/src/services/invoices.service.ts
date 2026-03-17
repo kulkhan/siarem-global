@@ -367,6 +367,79 @@ export async function deletePayment(paymentId: string) {
  * @returns Created draft invoice record
  * @throws {AppError} If tenant is missing (400) or quote is not found (404)
  */
+/**
+ * Creates a DRAFT invoice from a service record, copying items from the service's linked quote if available.
+ * @param serviceId - Service ID
+ * @param companyId - Tenant isolation company ID
+ * @param userId - ID of the user triggering the conversion
+ * @returns Created draft invoice record
+ * @throws {AppError} If tenant is missing (400) or service is not found (404)
+ */
+export async function createInvoiceFromService(
+  serviceId: string,
+  companyId: string | null,
+  userId?: string,
+) {
+  if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
+
+  const service = await prisma.service.findFirst({
+    where: { id: serviceId, companyId, deletedAt: null },
+    include: {
+      quotes: {
+        where: { deletedAt: null, status: { not: 'CANCELLED' } },
+        include: { items: { orderBy: { sortOrder: 'asc' } } },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+  if (!service) throw new AppError('Hizmet bulunamadı', 404);
+
+  const linkedQuote = service.quotes[0] ?? null;
+  const items = linkedQuote?.items ?? [];
+
+  const itemCurrencies = [...new Set(items.map((i) => i.currency))];
+  const invoiceCurrency = itemCurrencies.length === 1 ? itemCurrencies[0] : 'EUR';
+  const amount = items
+    .filter((i) => i.currency === invoiceCurrency)
+    .reduce((sum, i) => sum + Number(i.total), 0);
+
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.invoice.create({
+      data: {
+        companyId,
+        customerId: service.customerId,
+        serviceId: service.id,
+        quoteId: linkedQuote?.id ?? undefined,
+        createdById: userId,
+        amount,
+        currency: invoiceCurrency,
+        status: 'DRAFT',
+        isCombined: false,
+        invoiceDate: new Date(),
+      },
+    });
+
+    if (items.length > 0) {
+      await tx.invoiceItem.createMany({
+        data: items.map((item, i) => ({
+          id: require('crypto').randomUUID(),
+          invoiceId: inv.id,
+          productId: item.productId ?? null,
+          description: item.description,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          currency: item.currency,
+          total: Number(item.total),
+          sortOrder: item.sortOrder ?? i,
+        })),
+      });
+    }
+
+    return inv;
+  });
+}
+
 export async function createInvoiceFromQuote(
   quoteId: string,
   companyId: string | null,

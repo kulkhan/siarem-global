@@ -12,7 +12,10 @@ router.post('/', ctrl.create);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
 
-// Convert a quote to a draft invoice
+// Convert a quote to a new service (preferred flow)
+router.post('/:id/convert-to-service', ctrl.convertToService);
+
+// Convert a quote directly to a draft invoice (legacy)
 router.post('/:id/convert-to-invoice', invoiceCtrl.convertFromQuote);
 
 export default router;

@@ -72,4 +72,7 @@ export const quotesApi = {
 
   convertToInvoice: (id: string) =>
     api.post<{ success: boolean; data: { id: string } }>(`/quotes/${id}/convert-to-invoice`),
+
+  convertToService: (id: string) =>
+    api.post<{ success: boolean; data: { id: string } }>(`/quotes/${id}/convert-to-service`),
 };

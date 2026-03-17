@@ -101,4 +101,7 @@ export const servicesApi = {
 
   types: () =>
     api.get<{ success: boolean; data: ServiceType[] }>('/services/types'),
+
+  convertToInvoice: (id: string) =>
+    api.post<{ success: boolean; data: { id: string } }>(`/services/${id}/convert-to-invoice`),
 };

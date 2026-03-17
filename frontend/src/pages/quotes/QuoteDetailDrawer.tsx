@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Ship, FileText, ReceiptText, Printer } from 'lucide-react';
+import { X, Ship, FileText, Printer, Wrench, Trash2 } from 'lucide-react';
 import { quotesApi } from '@/api/quotes';
 import { getOwnCompany } from '@/api/companies';
 import { printQuote } from '@/utils/printDocument';
+import { useAuthStore } from '@/store/auth.store';
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-600',
@@ -39,7 +40,11 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { user } = useAuthStore();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const [convertError, setConvertError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quote-detail', quoteId],
@@ -54,15 +59,28 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
   });
 
   const convertMutation = useMutation({
-    mutationFn: () => quotesApi.convertToInvoice(quoteId),
-    onSuccess: () => {
+    mutationFn: () => quotesApi.convertToService(quoteId),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['services'] });
+      qc.invalidateQueries({ queryKey: ['quotes'] });
+      qc.invalidateQueries({ queryKey: ['quote-detail', quoteId] });
       onClose();
-      navigate('/invoices');
+      navigate(`/services?highlight=${res.data.data.id}`);
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
       setConvertError(err?.response?.data?.message ?? 'Dönüştürme başarısız');
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => quotesApi.delete(quoteId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['quotes'] });
+      onClose();
+    },
+  });
+
+  const canDelete = quote && (isSuperAdmin || quote.status === 'DRAFT');
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end pointer-events-none">
@@ -75,16 +93,46 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50 shrink-0">
           <h2 className="text-base font-semibold text-gray-800">{t('quotes.detail')}</h2>
           <div className="flex items-center gap-2">
-            {quote && quote.status !== 'CANCELLED' && quote.status !== 'REJECTED' && (
+            {quote && !quote.service && quote.status !== 'CANCELLED' && quote.status !== 'REJECTED' && (
               <button
                 onClick={() => { setConvertError(null); convertMutation.mutate(); }}
                 disabled={convertMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 font-medium"
-                title="Tekliften taslak fatura oluştur"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium"
+                title="Tekliften hizmet oluştur"
               >
-                <ReceiptText className="w-3.5 h-3.5" />
-                {convertMutation.isPending ? '...' : 'Faturaya Dönüştür'}
+                <Wrench className="w-3.5 h-3.5" />
+                {convertMutation.isPending ? '...' : t('quotes.convertToService')}
               </button>
+            )}
+            {quote?.service && (
+              <span className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 border border-green-200 rounded-md font-medium">
+                <Wrench className="w-3 h-3" />
+                {t('quotes.linkedService')}
+              </span>
+            )}
+            {canDelete && (
+              confirmDelete ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-gray-500">{t('common.deleteConfirm')}</span>
+                  <button
+                    onClick={() => deleteMutation.mutate()}
+                    disabled={deleteMutation.isPending}
+                    className="text-[11px] text-red-600 font-semibold hover:underline disabled:opacity-50"
+                  >{t('common.yes')}</button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-[11px] text-gray-500 font-semibold hover:underline"
+                  >{t('common.no')}</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title={t('common.delete')}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )
             )}
             <button
               onClick={() => quote && printQuote(quote as Parameters<typeof printQuote>[0], ownCompany, i18n.language)}

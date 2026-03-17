@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -95,6 +95,12 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
 
   const watchedCustomerId = watch('customerId');
   const watchedItems = watch('items') ?? [];
+  const [filterServiceTypeId, setFilterServiceTypeId] = useState<string>('');
+
+  const { data: serviceTypes = [] } = useQuery({
+    queryKey: ['service-types'],
+    queryFn: () => servicesApi.types().then((r) => r.data.data),
+  });
 
   const { data: services } = useQuery({
     queryKey: ['services-mini', watchedCustomerId],
@@ -195,14 +201,18 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
     ...(customers?.map((c) => ({ value: c.id, label: `${c.shortCode} — ${c.name}` })) ?? []),
   ];
 
+  const filteredServices = filterServiceTypeId
+    ? (services ?? []).filter((s) => String(s.serviceTypeId) === filterServiceTypeId)
+    : (services ?? []);
+
   const serviceOptions = [
     { value: '', label: watchedCustomerId ? '—' : '(önce müşteri seçin)' },
-    ...(services?.map((s) => {
+    ...filteredServices.map((s) => {
       const stLabel = s.serviceType ? (lang === 'tr' ? s.serviceType.nameTr : s.serviceType.nameEn) : '';
       const shipLabel = s.ship?.name ?? '';
       const label = [stLabel, shipLabel].filter(Boolean).join(' — ') || s.id.slice(-6);
       return { value: s.id, label };
-    }) ?? []),
+    }),
   ];
 
   return (
@@ -234,13 +244,28 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
           </Field>
 
           <Field label={t('quotes.fields.service')}>
-            <Controller
-              control={control}
-              name="serviceId"
-              render={({ field }) => (
-                <NativeSelect {...field} options={serviceOptions} disabled={!watchedCustomerId} />
-              )}
-            />
+            <div className="flex flex-col gap-1">
+              <select
+                value={filterServiceTypeId}
+                onChange={(e) => { setFilterServiceTypeId(e.target.value); setValue('serviceId', ''); }}
+                disabled={!watchedCustomerId}
+                className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+              >
+                <option value="">{t('common.all')} ({t('quotes.fields.service')})</option>
+                {serviceTypes.map((st) => (
+                  <option key={st.id} value={String(st.id)}>
+                    {lang === 'tr' ? st.nameTr : st.nameEn}
+                  </option>
+                ))}
+              </select>
+              <Controller
+                control={control}
+                name="serviceId"
+                render={({ field }) => (
+                  <NativeSelect {...field} options={serviceOptions} disabled={!watchedCustomerId} />
+                )}
+              />
+            </div>
           </Field>
 
           <Field label={t('quotes.fields.quoteNumber')}>

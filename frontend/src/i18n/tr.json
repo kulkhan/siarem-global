@@ -297,7 +297,8 @@
       "UPDATED": "Güncellendi"
     },
     "detail": "Hizmet Detayı",
-    "fields_invoiceReady": "Fatura Kesilebilir"
+    "fields_invoiceReady": "Fatura Kesilebilir",
+    "convertToInvoice": "Faturaya Dönüştür"
   },
   "quotes": {
     "title": "Teklifler",
@@ -330,7 +331,9 @@
     "filter": {
       "search": "Teklif no veya müşteri ara...",
       "status": "Durum"
-    }
+    },
+    "convertToService": "Hizmete Dönüştür",
+    "linkedService": "Hizmete Dönüştürüldü"
   },
   "invoices": {
     "title": "Faturalar",

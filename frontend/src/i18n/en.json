@@ -286,7 +286,8 @@
       "UPDATED": "Updated"
     },
     "detail": "Service Detail",
-    "fields_invoiceReady": "Ready to Invoice"
+    "fields_invoiceReady": "Ready to Invoice",
+    "convertToInvoice": "Convert to Invoice"
   },
   "quotes": {
     "title": "Quotes",
@@ -319,7 +320,9 @@
     "filter": {
       "search": "Search by quote no or customer...",
       "status": "Status"
-    }
+    },
+    "convertToService": "Convert to Service",
+    "linkedService": "Converted to Service"
   },
   "invoices": {
     "title": "Invoices",

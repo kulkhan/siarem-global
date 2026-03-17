@@ -80,6 +80,22 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * Creates a new OPEN service from a quote and links the quote to that service.
+ * @route POST /api/quotes/:id/convert-to-service
+ * @access authenticate
+ */
+export async function convertToService(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.sub;
+    const companyId = req.user?.companyId ?? null;
+    const service = await svc.convertQuoteToService(req.params.id, userId, companyId);
+    res.status(201).json({ success: true, data: service });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
  * Soft-deletes a quote by ID.
  * @route DELETE /api/quotes/:id
  * @access authenticate

@@ -14,6 +14,8 @@ import { servicesApi } from '@/api/services';
 import { customersApi } from '@/api/customers';
 import { shipsApi } from '@/api/ships';
 import { quotesApi } from '@/api/quotes';
+import { usersApi } from '@/api/users';
+import { useAuthStore } from '@/store/auth.store';
 
 const schema = z.object({
   customerId: z.string().min(1, 'required'),
@@ -51,6 +53,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
   const { t, i18n } = useTranslation();
   const isEdit = mode === 'edit';
   const lang = i18n.language;
+  const { user: currentUser } = useAuthStore();
 
   // Fetch existing service on edit
   const { data: existing } = useQuery({
@@ -63,6 +66,11 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
   const { data: serviceTypes } = useQuery({
     queryKey: ['service-types'],
     queryFn: () => servicesApi.types().then((r) => r.data.data),
+  });
+
+  const { data: users } = useQuery({
+    queryKey: ['users-list'],
+    queryFn: () => usersApi.list().then((r) => r.data.data),
   });
 
   const { data: customers } = useQuery({
@@ -79,7 +87,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { status: 'OPEN', priority: 'MEDIUM' },
+    defaultValues: { status: 'OPEN', priority: 'MEDIUM', assignedUserId: currentUser?.id ?? '' },
   });
 
   const watchedCustomerId = watch('customerId');
@@ -128,7 +136,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
         mohaStatus: existing.mohaStatus ?? '',
       });
     } else if (!isEdit) {
-      reset({ status: 'OPEN', priority: 'MEDIUM' });
+      reset({ status: 'OPEN', priority: 'MEDIUM', assignedUserId: currentUser?.id ?? '' });
     }
   }, [open, isEdit, existing, reset]);
 
@@ -258,7 +266,19 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
           </Field>
 
           <Field label={t('services.fields.assignedUser')}>
-            <Input {...register('assignedUserId')} placeholder="Kullanıcı ID" />
+            <Controller
+              control={control}
+              name="assignedUserId"
+              render={({ field }) => (
+                <NativeSelect
+                  {...field}
+                  options={[
+                    { value: '', label: '—' },
+                    ...(users?.filter((u) => u.isActive).map((u) => ({ value: u.id, label: u.name })) ?? []),
+                  ]}
+                />
+              )}
+            />
           </Field>
 
           <Field label="Teklif (opsiyonel)">

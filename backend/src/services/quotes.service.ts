@@ -247,6 +247,52 @@ export async function updateQuote(
 }
 
 /**
+ * Creates a new OPEN service from a quote and links the quote to that service.
+ * If the quote is already linked to a service, returns the existing service.
+ * @param id - Quote ID
+ * @param userId - ID of the user performing the action
+ * @param companyId - Tenant isolation company ID
+ * @returns Newly created (or existing linked) service
+ * @throws {AppError} If quote is not found (404)
+ */
+export async function convertQuoteToService(id: string, userId?: string, companyId?: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const quote = await prisma.quote.findFirst({
+    where: { id, deletedAt: null, ...tenantFilter },
+    include: { quoteShips: { take: 1 } },
+  });
+  if (!quote) throw new AppError('Quote not found', 404);
+
+  if (quote.serviceId) {
+    const existing = await prisma.service.findFirst({ where: { id: quote.serviceId } });
+    if (existing) return existing;
+  }
+
+  const service = await prisma.service.create({
+    data: {
+      companyId: quote.companyId,
+      customerId: quote.customerId,
+      shipId: quote.quoteShips[0]?.shipId ?? null,
+      status: 'OPEN',
+      priority: 'MEDIUM',
+      createdById: userId,
+      assignedUserId: userId ?? null,
+      logs: {
+        create: {
+          userId,
+          action: 'CREATED',
+          note: `Teklif #${quote.quoteNumber ?? quote.id.slice(-6)} üzerinden oluşturuldu`,
+        },
+      },
+    },
+  });
+
+  await prisma.quote.update({ where: { id }, data: { serviceId: service.id } });
+
+  return service;
+}
+
+/**
  * Soft-deletes a quote by setting deletedAt timestamp.
  * @param id - Quote ID
  * @param userId - ID of the user performing the deletion

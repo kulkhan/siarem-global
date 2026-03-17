@@ -141,12 +141,13 @@ export async function createService(
     startDate?: string;
     invoiceReady?: boolean;
     invoiceReadyNote?: string;
+    quoteId?: string;  // handled separately — updates Quote.serviceId
   },
   userId?: string,
   companyId?: string
 ) {
   if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
-  const { startDate, ...rest } = data;
+  const { startDate, quoteId, ...rest } = data;
   return prisma.$transaction(async (tx) => {
     const created = await tx.service.create({
       data: {
@@ -164,6 +165,13 @@ export async function createService(
         note: 'Hizmet oluşturuldu',
       },
     });
+    // Link quote → service by updating Quote.serviceId
+    if (quoteId) {
+      await tx.quote.updateMany({
+        where: { id: quoteId, companyId },
+        data: { serviceId: created.id },
+      });
+    }
     return created;
   });
 }
@@ -199,6 +207,7 @@ export async function updateService(
     completedAt?: string | null;
     invoiceReady?: boolean;
     invoiceReadyNote?: string;
+    quoteId?: string;  // handled separately — updates Quote.serviceId
   },
   userId?: string,
   companyId?: string | null
@@ -207,7 +216,7 @@ export async function updateService(
   const existing = await prisma.service.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
   if (!existing) throw new AppError('Service not found', 404);
 
-  const { startDate, completedAt, ...rest } = data;
+  const { startDate, completedAt, quoteId, ...rest } = data;
 
   type LogEntry = {
     serviceId: string;
@@ -244,6 +253,13 @@ export async function updateService(
     });
     if (logEntries.length > 0) {
       await tx.serviceLog.createMany({ data: logEntries });
+    }
+    // Link quote → service by updating Quote.serviceId
+    if (quoteId) {
+      await tx.quote.updateMany({
+        where: { id: quoteId, ...(companyId ? { companyId } : {}) },
+        data: { serviceId: id },
+      });
     }
     return updated;
   });

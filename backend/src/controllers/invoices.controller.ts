@@ -145,3 +145,19 @@ export async function convertFromQuote(req: Request, res: Response, next: NextFu
     next(err);
   }
 }
+
+/**
+ * Creates a DRAFT invoice from a service record (copies items from linked quote if any).
+ * @route POST /api/services/:id/convert-to-invoice
+ * @access authenticate
+ */
+export async function convertFromService(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user?.sub;
+    const companyId = req.user?.companyId ?? null;
+    const data = await svc.createInvoiceFromService(req.params.id, companyId, userId);
+    res.status(201).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
