@@ -711,5 +711,138 @@
       "done": "Completed",
       "openBugs": "Open Bugs"
     }
+  },
+  "help": {
+    "title": "User Guide",
+    "subtitle": "Step-by-step guide for Customer, Quote, Service and Invoice workflows",
+    "tabs": {
+      "overview": "Overview",
+      "customers": "Customers",
+      "quotes": "Quotes",
+      "services": "Services",
+      "invoices": "Invoices"
+    },
+    "overview": {
+      "title": "Welcome to oddyCRM",
+      "intro": "oddyCRM is a multi-tenant CRM platform built for the maritime industry. You can manage the entire cycle from customer management to invoicing in one place.",
+      "workflow": "Core Workflow",
+      "steps": [
+        "Add the customer and enter contact details",
+        "Create a quote for the customer with itemised pricing",
+        "Convert the approved quote into a service order",
+        "Issue an invoice when the service is complete and track payments"
+      ],
+      "modules": "Main Modules",
+      "moduleList": {
+        "customers": "Customer management, contacts, bank accounts",
+        "quotes": "Quote creation, revisions, status tracking",
+        "services": "Service orders, status updates, reports",
+        "invoices": "Invoice creation, payment tracking, status management",
+        "ships": "Vessel records, certificates, document management",
+        "reports": "Revenue, service and quote reports"
+      }
+    },
+    "customers": {
+      "title": "Customer Management",
+      "intro": "The Customers module lets you manage company details, contacts, bank accounts and assigned representatives in one place.",
+      "addTitle": "Adding a New Customer",
+      "addSteps": [
+        "Go to Customers in the left menu",
+        "Click the New Customer button at the top right",
+        "Enter a Short Code — it must be unique within your company (e.g. ACME-001)",
+        "Fill in company name, email, phone and address",
+        "Click Save"
+      ],
+      "detailTitle": "Customer Detail",
+      "detailDesc": "Click any customer row to open the detail panel. Inside you can manage:",
+      "detailItems": [
+        "Contacts: Add contact persons, mark the primary contact",
+        "Bank Accounts: Save IBAN and account details",
+        "Notes: Add internal notes specific to the customer",
+        "Ships / Services / Invoices: View all related records"
+      ],
+      "deleteNote": "Deleting a customer requires a 2-step confirmation. Customers with linked ships cannot be deleted."
+    },
+    "quotes": {
+      "title": "Quote Management",
+      "intro": "The Quotes module lets you create price quotes for customers, revise them, and track approval status.",
+      "addTitle": "Creating a New Quote",
+      "addSteps": [
+        "Go to Quotes in the left menu",
+        "Click New Quote",
+        "Select a customer (required)",
+        "Select a related service (optional)",
+        "Set the quote date and validity date",
+        "Use Add Line to add service/product rows with unit, quantity and currency",
+        "Click Save — the system auto-generates a quote number"
+      ],
+      "statusTitle": "Quote Statuses",
+      "statuses": {
+        "DRAFT": "Draft — being prepared, not yet sent to customer",
+        "SENT": "Sent — awaiting customer review",
+        "APPROVED": "Approved — ready to convert to a service",
+        "REJECTED": "Rejected",
+        "REVISED": "Revised — a new version has been created",
+        "CANCELLED": "Cancelled"
+      },
+      "convertTitle": "Converting a Quote to a Service",
+      "convertDesc": "After a quote is approved, click Convert to Service in the detail panel. The system automatically creates service orders based on the service types in the quote items."
+    },
+    "services": {
+      "title": "Service Management",
+      "intro": "The Services module tracks the status, priority and details of every service order issued to a customer.",
+      "addTitle": "Creating a New Service",
+      "addSteps": [
+        "Go to Services in the left menu",
+        "Click New Service",
+        "Select the customer and ship (if applicable)",
+        "Choose the service type",
+        "Status defaults to OPEN, priority to MEDIUM",
+        "Select a related quote (optional — reused when creating an invoice)",
+        "Click Save"
+      ],
+      "statusTitle": "Service Statuses",
+      "statuses": {
+        "OPEN": "Open — not yet started",
+        "IN_PROGRESS": "In Progress",
+        "ON_HOLD": "On Hold",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled"
+      },
+      "reportTitle": "Service Report",
+      "reportDesc": "Use the Report button in the service detail to create a service report: work done, findings and parts used.",
+      "invoiceTitle": "Creating an Invoice from a Service",
+      "invoiceDesc": "When a service is complete, click Create Invoice in the detail panel. Line items from the linked quote are automatically copied to the new invoice."
+    },
+    "invoices": {
+      "title": "Invoice & Payment Management",
+      "intro": "The Invoices module covers invoice creation, sending, payment tracking and status updates.",
+      "addTitle": "Creating a New Invoice",
+      "addSteps": [
+        "Go to the Invoices page or use the Create Invoice button from a Service or Quote detail",
+        "Select the customer and the related service / quote",
+        "Enter invoice date and due date",
+        "Add line items or edit items copied from the quote",
+        "Save with status DRAFT",
+        "Change status to SENT after sending the invoice to the customer"
+      ],
+      "statusTitle": "Invoice Statuses",
+      "statuses": {
+        "DRAFT": "Draft — being prepared",
+        "SENT": "Sent — awaiting payment",
+        "PARTIALLY_PAID": "Partially Paid",
+        "PAID": "Paid — all payments received",
+        "OVERDUE": "Overdue — past due date",
+        "CANCELLED": "Cancelled"
+      },
+      "paymentTitle": "Recording a Payment",
+      "paymentDesc": "Use the Add Payment button in the invoice detail. After each payment, the system automatically updates the invoice status based on total paid (PARTIALLY_PAID or PAID).",
+      "noteTitle": "Important Notes",
+      "notes": [
+        "Stock deduction happens automatically when invoice status is set to SENT",
+        "Multiple payments can be added; each requires a date and payment method",
+        "When a payment is deleted, the invoice status is automatically recalculated"
+      ]
+    }
   }
 }

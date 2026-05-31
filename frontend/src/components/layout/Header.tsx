@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
-import { Globe, Building2, Moon, Sun, Bell } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { Globe, Building2, Moon, Sun, Bell, HelpCircle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
@@ -147,6 +147,11 @@ export default function Header() {
           {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
         </div>
       )}
+
+      {/* Help link */}
+      <Button variant="ghost" size="sm" asChild className="text-gray-600" title={t('help.title')}>
+        <Link to="/help"><HelpCircle className="w-4 h-4" /></Link>
+      </Button>
 
       {/* Language toggle */}
       <Button variant="ghost" size="sm" onClick={toggleLang} className="gap-2 text-gray-600">

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/error.middleware';
 import { QuoteStatus } from '@prisma/client';
@@ -167,7 +168,7 @@ export async function createQuote(data: {
     if (items && items.length > 0) {
       await tx.quoteItem.createMany({
         data: items.map((item, i) => ({
-          id: require('crypto').randomUUID(),
+          id: randomUUID(),
           quoteId: quote.id,
           productId: item.productId ?? null,
           serviceTypeId: item.serviceTypeId ?? null,
@@ -236,7 +237,7 @@ export async function updateQuote(
       if (items.length > 0) {
         await tx.quoteItem.createMany({
           data: items.map((item, i) => ({
-            id: require('crypto').randomUUID(),
+            id: randomUUID(),
             quoteId: id,
             productId: item.productId ?? null,
             serviceTypeId: item.serviceTypeId ?? null,

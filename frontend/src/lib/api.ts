@@ -1,3 +1,12 @@
+/**
+ * Centralised Axios instance for all API calls.
+ * Every request automatically receives:
+ *  - Authorization: Bearer <JWT from localStorage>
+ *  - X-Tenant-Domain: window.location.hostname (for tenant resolution)
+ *  - X-Selected-Company: active tenant ID when SUPER_ADMIN selects a company
+ * A global 401 interceptor clears auth state and redirects to /login,
+ * except for /auth/* endpoints which handle errors in-page.
+ */
 import axios from 'axios';
 import { useTenantStore } from '@/store/tenant.store';
 import { useAuthStore } from '@/store/auth.store';

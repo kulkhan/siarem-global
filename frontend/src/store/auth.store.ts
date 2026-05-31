@@ -1,3 +1,10 @@
+/**
+ * Zustand auth store with localStorage persistence.
+ * Stores the JWT token + user profile; the token is also mirrored to
+ * localStorage under the key 'token' so the Axios interceptor can read
+ * it synchronously without subscribing to the store.
+ * clearAuth() removes both the Zustand state and the localStorage entry.
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';

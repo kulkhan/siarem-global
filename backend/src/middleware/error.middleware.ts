@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Typed application error with an HTTP status code.
+ * Throw this in services/controllers to return a structured error response.
+ * The global errorHandler below serialises it as { success: false, message }.
+ */
 export class AppError extends Error {
   statusCode: number;
   constructor(message: string, statusCode = 400) {
@@ -9,6 +14,12 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * Global Express error handler — must be the last middleware registered in app.ts.
+ * AppError instances are forwarded with their own status code.
+ * In production, 500 errors are sanitised to "Internal server error"
+ * to avoid leaking stack traces to clients.
+ */
 export function errorHandler(
   err: Error,
   _req: Request,

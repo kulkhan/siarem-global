@@ -17,6 +17,16 @@ declare global {
   }
 }
 
+/**
+ * Express middleware that resolves the current tenant from the X-Tenant-Domain header.
+ * Resolution order:
+ *  1. No header → skip (SUPER_ADMIN or internal call)
+ *  2. Admin domain (env.adminDomain) → skip
+ *  3. localhost / 127.0.0.1 → use the oldest active company (dev fallback)
+ *  4. Exact domain match in companies table
+ *  5. Slug match extracted from the first subdomain segment
+ * Sets req.tenant if a matching active company is found; otherwise proceeds without it.
+ */
 export async function resolveTenant(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const tenantDomain = req.headers['x-tenant-domain'] as string | undefined;
 

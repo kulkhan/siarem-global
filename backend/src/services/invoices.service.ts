@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/error.middleware';
 import { InvoiceStatus } from '@prisma/client';
@@ -163,7 +164,7 @@ export async function createInvoice(data: {
     if (items && items.length > 0) {
       await tx.invoiceItem.createMany({
         data: items.map((item, i) => ({
-          id: require('crypto').randomUUID(),
+          id: randomUUID(),
           invoiceId: inv.id,
           productId: item.productId ?? null,
           serviceId: item.serviceId ?? null,
@@ -242,7 +243,7 @@ export async function updateInvoice(
       if (items.length > 0) {
         await tx.invoiceItem.createMany({
           data: items.map((item, i) => ({
-            id: require('crypto').randomUUID(),
+            id: randomUUID(),
             invoiceId: id,
             productId: item.productId ?? null,
             serviceId: item.serviceId ?? null,
@@ -426,7 +427,7 @@ export async function createInvoiceFromService(
     if (items.length > 0) {
       await tx.invoiceItem.createMany({
         data: items.map((item, i) => ({
-          id: require('crypto').randomUUID(),
+          id: randomUUID(),
           invoiceId: inv.id,
           productId: item.productId ?? null,
           description: item.description,
@@ -489,7 +490,7 @@ export async function createInvoiceFromQuote(
     if (quote.items.length > 0) {
       await tx.invoiceItem.createMany({
         data: quote.items.map((item, i) => ({
-          id: require('crypto').randomUUID(),
+          id: randomUUID(),
           invoiceId: inv.id,
           productId: item.productId ?? null,
           description: item.description,

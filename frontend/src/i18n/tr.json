@@ -722,5 +722,138 @@
       "done": "Tamamlanan",
       "openBugs": "Açık Hata"
     }
+  },
+  "help": {
+    "title": "Kullanım Kılavuzu",
+    "subtitle": "Müşteri, Teklif, Hizmet ve Fatura süreçlerinin adım adım açıklaması",
+    "tabs": {
+      "overview": "Genel Bakış",
+      "customers": "Müşteriler",
+      "quotes": "Teklifler",
+      "services": "Hizmetler",
+      "invoices": "Faturalar"
+    },
+    "overview": {
+      "title": "oddyCRM'e Hoş Geldiniz",
+      "intro": "oddyCRM, denizcilik sektörüne özel çok kiracılı bir CRM platformudur. Müşteri yönetiminden faturaya kadar tüm süreçleri tek ekranda takip edebilirsiniz.",
+      "workflow": "Temel İş Akışı",
+      "steps": [
+        "Müşteriyi sisteme ekleyin ve iletişim bilgilerini girin",
+        "Müşteri için teklif oluşturun ve kalem kalem fiyatlandırın",
+        "Teklifi onaylandıktan sonra hizmet kaydına dönüştürün",
+        "Hizmet tamamlandığında fatura oluşturun ve ödeme takibi yapın"
+      ],
+      "modules": "Ana Modüller",
+      "moduleList": {
+        "customers": "Müşteri yönetimi, kişiler, banka hesapları",
+        "quotes": "Teklif oluşturma, revizyon, durum takibi",
+        "services": "Hizmet emirleri, durum güncellemeleri, raporlar",
+        "invoices": "Fatura oluşturma, ödeme takibi, durum yönetimi",
+        "ships": "Gemi kayıtları, sertifikalar, belge yönetimi",
+        "reports": "Gelir, hizmet ve teklif raporları"
+      }
+    },
+    "customers": {
+      "title": "Müşteri Yönetimi",
+      "intro": "Müşteriler modülü; firma bilgilerini, iletişim kişilerini, banka hesaplarını ve atanan temsilcileri tek yerden yönetmenizi sağlar.",
+      "addTitle": "Yeni Müşteri Ekleme",
+      "addSteps": [
+        "Sol menüden Müşteriler sayfasına girin",
+        "Sağ üstteki Yeni Müşteri butonuna tıklayın",
+        "Kısa Kod (shortcode) girin — bu kod benzersiz olmalıdır (örn. ACME-001)",
+        "Firma adı, e-posta, telefon ve adres bilgilerini doldurun",
+        "Kaydet butonuna tıklayın"
+      ],
+      "detailTitle": "Müşteri Detayı",
+      "detailDesc": "Müşteri satırına tıklayarak detay panelini açabilirsiniz. Bu panelde:",
+      "detailItems": [
+        "Kişiler: İletişim kişisi ekleyin, birincil kişiyi işaretleyin",
+        "Banka Hesapları: IBAN ve hesap bilgilerini kaydedin",
+        "Notlar: Müşteriye özel dahili notlar ekleyin",
+        "Gemiler / Hizmetler / Faturalar: İlgili kayıtları görüntüleyin"
+      ],
+      "deleteNote": "Müşteri silme işlemi için 2 adımlı onay gereklidir. Bağlı gemisi olan müşteriler silinemez."
+    },
+    "quotes": {
+      "title": "Teklif Yönetimi",
+      "intro": "Teklifler modülü; müşterilere fiyat teklifi oluşturmanızı, revize etmenizi ve onay sürecini takip etmenizi sağlar.",
+      "addTitle": "Yeni Teklif Oluşturma",
+      "addSteps": [
+        "Sol menüden Teklifler sayfasına girin",
+        "Yeni Teklif butonuna tıklayın",
+        "Müşteriyi seçin (zorunlu)",
+        "İlgili hizmeti seçin (isteğe bağlı)",
+        "Teklif tarihi ve geçerlilik tarihini belirleyin",
+        "Kalem Ekle ile hizmet/ürün satırları ekleyin: birim, miktar, para birimi",
+        "Kaydet butonuna tıklayın — sistem otomatik teklif numarası üretir"
+      ],
+      "statusTitle": "Teklif Durumları",
+      "statuses": {
+        "DRAFT": "Taslak — hazırlanıyor, müşteriye henüz gönderilmedi",
+        "SENT": "Gönderildi — müşteri incelemekte",
+        "APPROVED": "Onaylandı — hizmete dönüştürülmeye hazır",
+        "REJECTED": "Reddedildi",
+        "REVISED": "Revize edildi — yeni sürüm oluşturuldu",
+        "CANCELLED": "İptal edildi"
+      },
+      "convertTitle": "Tekliften Hizmet Oluşturma",
+      "convertDesc": "Teklif onaylandıktan sonra detay panelinde Hizmete Dönüştür butonuna tıklayın. Sistem, teklif kalemlerindeki hizmet tiplerine göre otomatik hizmet emri oluşturur."
+    },
+    "services": {
+      "title": "Hizmet Yönetimi",
+      "intro": "Hizmetler modülü; müşteriye verilen her hizmet emrinin durumunu, önceliğini ve detaylarını takip eder.",
+      "addTitle": "Yeni Hizmet Kaydı",
+      "addSteps": [
+        "Sol menüden Hizmetler sayfasına girin",
+        "Yeni Hizmet butonuna tıklayın",
+        "Müşteri ve gemi (varsa) seçin",
+        "Hizmet tipini seçin",
+        "Durum: OPEN, öncelik: MEDIUM ile başlar",
+        "İlgili teklifi seçin (isteğe bağlı — fatura oluştururken tekrar kullanılır)",
+        "Kaydet"
+      ],
+      "statusTitle": "Hizmet Durumları",
+      "statuses": {
+        "OPEN": "Açık — henüz başlanmadı",
+        "IN_PROGRESS": "Devam Ediyor",
+        "ON_HOLD": "Beklemede",
+        "COMPLETED": "Tamamlandı",
+        "CANCELLED": "İptal"
+      },
+      "reportTitle": "Hizmet Raporu",
+      "reportDesc": "Hizmet detayında Rapor butonu ile servis raporu oluşturabilirsiniz: yapılan iş, bulgular ve kullanılan parçalar.",
+      "invoiceTitle": "Hizmetten Fatura Oluşturma",
+      "invoiceDesc": "Hizmet tamamlandığında detay panelindeki Fatura Oluştur butonuna tıklayın. Bağlı teklifin kalemleri otomatik fatura satırlarına kopyalanır."
+    },
+    "invoices": {
+      "title": "Fatura ve Ödeme Yönetimi",
+      "intro": "Faturalar modülü; fatura oluşturma, gönderme, ödeme takibi ve durum güncellemelerini kapsar.",
+      "addTitle": "Yeni Fatura Oluşturma",
+      "addSteps": [
+        "Faturalar sayfasına gidin veya Hizmet/Teklif detayından Fatura Oluştur butonunu kullanın",
+        "Müşteriyi ve ilgili hizmeti/teklifi seçin",
+        "Fatura tarihi ve vade tarihini girin",
+        "Kalem ekleyin veya tekliften kopyalanan kalemleri düzenleyin",
+        "Durumu DRAFT olarak kaydedin",
+        "Faturayı müşteriye gönderdikten sonra durumu SENT yapın"
+      ],
+      "statusTitle": "Fatura Durumları",
+      "statuses": {
+        "DRAFT": "Taslak — hazırlanıyor",
+        "SENT": "Gönderildi — ödeme bekleniyor",
+        "PARTIALLY_PAID": "Kısmen Ödendi",
+        "PAID": "Ödendi — tüm ödemeler alındı",
+        "OVERDUE": "Gecikmiş — vade aşıldı",
+        "CANCELLED": "İptal"
+      },
+      "paymentTitle": "Ödeme Kaydetme",
+      "paymentDesc": "Fatura detayında Ödeme Ekle butonunu kullanın. Her ödeme sonrası sistem toplam ödenen tutara göre fatura durumunu otomatik günceller (PARTIALLY_PAID veya PAID).",
+      "noteTitle": "Önemli Notlar",
+      "notes": [
+        "Fatura durumu SENT yapılırken stok düşümü otomatik gerçekleşir",
+        "Birden fazla ödeme eklenebilir; her ödeme için tarih ve yöntem girilir",
+        "Ödeme silindiğinde fatura durumu otomatik yeniden hesaplanır"
+      ]
+    }
   }
 }

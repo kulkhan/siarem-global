@@ -3,12 +3,13 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { AppError } from './error.middleware';
 
+/** Shape of the decoded JWT payload attached to req.user after authentication. */
 export interface JwtPayload {
-  sub: string;
+  sub: string;            // User ID (cuid)
   email: string;
-  role: string;
+  role: string;           // 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'USER'
   name: string;
-  companyId: string | null;
+  companyId: string | null; // null for SUPER_ADMIN
 }
 
 declare global {
@@ -19,6 +20,12 @@ declare global {
   }
 }
 
+/**
+ * Express middleware that validates the Bearer JWT in Authorization header.
+ * On success, attaches the decoded payload to req.user.
+ * For SUPER_ADMIN, overrides req.user.companyId with X-Selected-Company header
+ * so that service queries are scoped to the chosen tenant.
+ */
 export function authenticate(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
@@ -44,6 +51,11 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
   }
 }
 
+/**
+ * Factory that returns middleware enforcing one of the given roles.
+ * SUPER_ADMIN bypasses all role checks automatically.
+ * @param roles - Allowed role strings (e.g. 'ADMIN', 'MANAGER')
+ */
 export function requireRole(...roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
