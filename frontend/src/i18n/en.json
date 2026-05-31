@@ -27,7 +27,8 @@
     "products": "Products",
     "documents": "Documents",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "devTasks": "Dev Tracker"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -670,6 +671,45 @@
       "quotes": "Quotes",
       "invoices": "Invoices",
       "services": "Services"
+    }
+  },
+  "devTasks": {
+    "title": "Dev Tracker",
+    "subtitle": "Feature requests, improvements and bug reports",
+    "add": "New Entry",
+    "edit": "Edit Entry",
+    "empty": "No entries yet",
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "type": "Type",
+      "status": "Status",
+      "priority": "Priority",
+      "reportedAt": "Date",
+      "completedAt": "Completed"
+    },
+    "type": {
+      "FEATURE": "Feature",
+      "BUG": "Bug",
+      "IMPROVEMENT": "Improvement"
+    },
+    "status": {
+      "TODO": "To Do",
+      "IN_PROGRESS": "In Progress",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    },
+    "priority": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    },
+    "stats": {
+      "total": "Total",
+      "inProgress": "In Progress",
+      "done": "Completed",
+      "openBugs": "Open Bugs"
     }
   }
 }

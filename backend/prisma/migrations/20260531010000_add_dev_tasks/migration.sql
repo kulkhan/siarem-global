@@ -1,0 +1,13 @@
+CREATE TABLE "dev_tasks" (
+  "id" TEXT NOT NULL,
+  "title" TEXT NOT NULL,
+  "description" TEXT,
+  "type" TEXT NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'TODO',
+  "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+  "reported_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "completed_at" TIMESTAMP(3),
+  "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "dev_tasks_pkey" PRIMARY KEY ("id")
+);

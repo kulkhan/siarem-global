@@ -874,3 +874,22 @@ model Complaint {
 
   @@map("complaints")
 }
+
+// ─────────────────────────────────────────
+// DEV TASK (internal app changelog / task tracker)
+// ─────────────────────────────────────────
+
+model DevTask {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        String    // FEATURE | BUG | IMPROVEMENT
+  status      String    @default("TODO") // TODO | IN_PROGRESS | DONE | CANCELLED
+  priority    String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  reportedAt  DateTime  @default(now()) @map("reported_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("dev_tasks")
+}

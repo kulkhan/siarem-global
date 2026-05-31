@@ -17,6 +17,7 @@ import complaintsRoutes from './complaints.routes';
 import notificationsRoutes from './notifications.routes';
 import reportsRoutes from './reports.routes';
 import importRoutes from './import.routes';
+import devTasksRoutes from './devTasks.routes';
 
 const router = Router();
 
@@ -38,6 +39,7 @@ router.use('/complaints', complaintsRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/import', importRoutes);
+router.use('/dev-tasks', devTasksRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

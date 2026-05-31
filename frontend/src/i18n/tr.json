@@ -27,7 +27,8 @@
     "products": "Ürünler",
     "documents": "Dokümanlar",
     "reports": "Raporlar",
-    "settings": "Ayarlar"
+    "settings": "Ayarlar",
+    "devTasks": "Geliştirme Takibi"
   },
   "dashboard": {
     "title": "Panel",
@@ -681,6 +682,45 @@
       "quotes": "Teklifler",
       "invoices": "Faturalar",
       "services": "Hizmetler"
+    }
+  },
+  "devTasks": {
+    "title": "Geliştirme Takibi",
+    "subtitle": "Yeni özellik, iyileştirme ve hata kayıtları",
+    "add": "Yeni Kayıt",
+    "edit": "Kaydı Düzenle",
+    "empty": "Henüz kayıt yok",
+    "fields": {
+      "title": "Başlık",
+      "description": "Açıklama",
+      "type": "Tür",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "reportedAt": "Tarih",
+      "completedAt": "Tamamlanma"
+    },
+    "type": {
+      "FEATURE": "Yeni Özellik",
+      "BUG": "Hata",
+      "IMPROVEMENT": "İyileştirme"
+    },
+    "status": {
+      "TODO": "Bekliyor",
+      "IN_PROGRESS": "Devam Ediyor",
+      "DONE": "Tamamlandı",
+      "CANCELLED": "İptal"
+    },
+    "priority": {
+      "LOW": "Düşük",
+      "MEDIUM": "Orta",
+      "HIGH": "Yüksek",
+      "URGENT": "Acil"
+    },
+    "stats": {
+      "total": "Toplam",
+      "inProgress": "Devam Eden",
+      "done": "Tamamlanan",
+      "openBugs": "Açık Hata"
     }
   }
 }
