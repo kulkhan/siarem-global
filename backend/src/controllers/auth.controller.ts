@@ -47,10 +47,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
       const tenantDomain = req.headers['x-tenant-domain'] as string | undefined;
       if (tenantDomain && tenantDomain !== env.adminDomain) {
         companyId = req.tenant?.id ?? null;
-        if (!companyId) {
-          res.status(404).json({ success: false, message: 'Tenant bulunamadı' });
-          return;
-        }
+        // If no tenant resolved, allow null → loginUser will attempt SUPER_ADMIN path
       }
     }
 

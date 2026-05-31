@@ -73,6 +73,12 @@ export async function loginUser(email: string, password: string, companyId: stri
     user = await prisma.user.findFirst({
       where: { email, companyId },
     });
+    // Fallback: allow SUPER_ADMIN to login from any tenant domain
+    if (!user) {
+      user = await prisma.user.findFirst({
+        where: { email, companyId: null, role: 'SUPER_ADMIN' },
+      });
+    }
   }
 
   if (!user || !user.isActive) {
