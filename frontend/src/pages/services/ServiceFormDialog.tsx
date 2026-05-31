@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/select';
 import { FormSection, Field } from '@/components/shared/FormSection';
+import CustomerCombobox from '@/components/shared/CustomerCombobox';
 import { servicesApi } from '@/api/services';
-import { customersApi } from '@/api/customers';
 import { shipsApi } from '@/api/ships';
 import { quotesApi } from '@/api/quotes';
 import { usersApi } from '@/api/users';
@@ -28,12 +28,6 @@ const schema = z.object({
   completedAt: z.string().optional(),
   statusNote: z.string().max(500).optional(),
   notes: z.string().max(2000).optional(),
-  euMrvMpStatus: z.string().max(200).optional(),
-  ukMrvMpStatus: z.string().max(200).optional(),
-  fuelEuMpStatus: z.string().max(200).optional(),
-  imoDcsStatus: z.string().max(200).optional(),
-  euEtsStatus: z.string().max(200).optional(),
-  mohaStatus: z.string().max(200).optional(),
   quoteId: z.string().optional(),
   invoiceReady: z.boolean().optional(),
   invoiceReadyNote: z.string().max(500).optional(),
@@ -71,11 +65,6 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
   const { data: users } = useQuery({
     queryKey: ['users-list'],
     queryFn: () => usersApi.list().then((r) => r.data.data),
-  });
-
-  const { data: customers } = useQuery({
-    queryKey: ['customers-mini'],
-    queryFn: () => customersApi.list({ pageSize: 500, sortBy: 'name', sortOrder: 'asc' }).then((r) => r.data.data),
   });
 
   const {
@@ -128,12 +117,6 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
         quoteId: (existing as { quoteId?: string }).quoteId ?? '',
         invoiceReady: existing.invoiceReady ?? false,
         invoiceReadyNote: existing.invoiceReadyNote ?? '',
-        euMrvMpStatus: existing.euMrvMpStatus ?? '',
-        ukMrvMpStatus: existing.ukMrvMpStatus ?? '',
-        fuelEuMpStatus: existing.fuelEuMpStatus ?? '',
-        imoDcsStatus: existing.imoDcsStatus ?? '',
-        euEtsStatus: existing.euEtsStatus ?? '',
-        mohaStatus: existing.mohaStatus ?? '',
       });
     } else if (!isEdit) {
       reset({ status: 'OPEN', priority: 'MEDIUM', assignedUserId: currentUser?.id ?? '' });
@@ -153,12 +136,6 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
         completedAt: data.completedAt || undefined,
         statusNote: data.statusNote || undefined,
         notes: data.notes || undefined,
-        euMrvMpStatus: data.euMrvMpStatus || undefined,
-        ukMrvMpStatus: data.ukMrvMpStatus || undefined,
-        fuelEuMpStatus: data.fuelEuMpStatus || undefined,
-        imoDcsStatus: data.imoDcsStatus || undefined,
-        euEtsStatus: data.euEtsStatus || undefined,
-        mohaStatus: data.mohaStatus || undefined,
         quoteId: data.quoteId || undefined,
         invoiceReady: data.invoiceReady ?? false,
         invoiceReadyNote: data.invoiceReadyNote || undefined,
@@ -168,11 +145,6 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
     },
     onSuccess: onSaved,
   });
-
-  const customerOptions = [
-    { value: '', label: '—' },
-    ...(customers?.map((c) => ({ value: c.id, label: `${c.shortCode} — ${c.name}` })) ?? []),
-  ];
 
   const shipOptions = [
     { value: '', label: watchedCustomerId ? '—' : '(önce müşteri seçin)' },
@@ -233,10 +205,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
               control={control}
               name="customerId"
               render={({ field }) => (
-                <NativeSelect
-                  {...field}
-                  options={customerOptions}
-                />
+                <CustomerCombobox value={field.value} onChange={field.onChange} error={!!errors.customerId} />
               )}
             />
           </Field>
@@ -375,29 +344,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
           </Field>
         </FormSection>
 
-        {/* Section 4: Compliance */}
-        <FormSection title={t('services.sections.compliance')}>
-          <Field label={t('services.fields.euMrvMpStatus')}>
-            <Input {...register('euMrvMpStatus')} placeholder="Hazırlandı / Onaylandı..." />
-          </Field>
-          <Field label={t('services.fields.ukMrvMpStatus')}>
-            <Input {...register('ukMrvMpStatus')} placeholder="Hazırlandı / Onaylandı..." />
-          </Field>
-          <Field label={t('services.fields.fuelEuMpStatus')}>
-            <Input {...register('fuelEuMpStatus')} placeholder="Hazırlandı / Onaylandı..." />
-          </Field>
-          <Field label={t('services.fields.imoDcsStatus')}>
-            <Input {...register('imoDcsStatus')} placeholder="Hazırlandı / Onaylandı..." />
-          </Field>
-          <Field label={t('services.fields.euEtsStatus')}>
-            <Input {...register('euEtsStatus')} placeholder="Hazırlandı / Onaylandı..." />
-          </Field>
-          <Field label={t('services.fields.mohaStatus')}>
-            <Input {...register('mohaStatus')} placeholder="Hazırlandı / Onaylandı..." />
-          </Field>
-        </FormSection>
-
-        {/* Section 5: Notes */}
+        {/* Section 4: Notes */}
         <FormSection title={t('services.sections.notes')}>
           <Field label={t('services.fields.notes')} fullWidth>
             <Textarea {...register('notes')} rows={4} placeholder="Genel notlar..." />

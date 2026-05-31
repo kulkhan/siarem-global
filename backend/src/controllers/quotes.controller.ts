@@ -88,8 +88,8 @@ export async function convertToService(req: Request, res: Response, next: NextFu
   try {
     const userId = req.user?.sub;
     const companyId = req.user?.companyId ?? null;
-    const service = await svc.convertQuoteToService(req.params.id, userId, companyId);
-    res.status(201).json({ success: true, data: service });
+    const services = await svc.convertQuoteToService(req.params.id, userId, companyId);
+    res.status(201).json({ success: true, data: services, count: services.length });
   } catch (err) {
     next(err);
   }

@@ -1,24 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, PackagePlus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/select';
 import { FormSection, Field } from '@/components/shared/FormSection';
+import CustomerCombobox from '@/components/shared/CustomerCombobox';
 import { invoicesApi } from '@/api/invoices';
-import { customersApi } from '@/api/customers';
 import { servicesApi } from '@/api/services';
 import { productsApi } from '@/api/products';
 import type { Product } from '@/types';
 
 const itemSchema = z.object({
   productId: z.string().optional(),
+  serviceId: z.string().optional(),
   description: z.string().min(1, 'required'),
   quantity: z.coerce.number().min(0.0001),
   unitPrice: z.coerce.number().min(0),
@@ -56,15 +57,12 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
   const lang = i18n.language;
   const isEdit = mode === 'edit';
 
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+
   const { data: existing } = useQuery({
     queryKey: ['invoice', invoiceId],
     queryFn: () => invoicesApi.getOne(invoiceId!).then((r) => r.data.data),
     enabled: isEdit && !!invoiceId && open,
-  });
-
-  const { data: customers } = useQuery({
-    queryKey: ['customers-mini'],
-    queryFn: () => customersApi.list({ pageSize: 500, sortBy: 'name', sortOrder: 'asc' }).then((r) => r.data.data),
   });
 
   const { data: products = [] } = useQuery({
@@ -95,7 +93,7 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
   const watchedCustomerId = watch('customerId');
   const watchedItems = watch('items') ?? [];
 
-  const { data: services } = useQuery({
+  const { data: services = [] } = useQuery({
     queryKey: ['services-mini', watchedCustomerId],
     queryFn: () =>
       servicesApi.list({ customerId: watchedCustomerId, pageSize: 500, sortBy: 'createdAt', sortOrder: 'desc' })
@@ -105,6 +103,7 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
 
   useEffect(() => {
     if (!open) return;
+    setSelectedServiceIds([]);
     if (isEdit && existing) {
       const existingItems = (existing as { items?: Array<{ productId?: string | null; description: string; quantity: number; unitPrice: number; currency: string; total: number }> }).items ?? [];
       reset({
@@ -153,9 +152,7 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
   function recalcTotal(index: number) {
     const item = watchedItems[index];
     if (item) {
-      const newTotal = (item.quantity ?? 0) * (item.unitPrice ?? 0);
-      setValue(`items.${index}.total`, newTotal);
-      // Auto-fill header amount if all items share a single currency
+      setValue(`items.${index}.total`, (item.quantity ?? 0) * (item.unitPrice ?? 0));
       setTimeout(() => syncAmountFromItems(), 0);
     }
   }
@@ -169,6 +166,23 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
       setValue('amount', total);
       setValue('currency', currencies[0] as 'EUR' | 'USD' | 'TRY');
     }
+  }
+
+  function addSelectedServicesAsItems() {
+    const toAdd = services.filter((s) => selectedServiceIds.includes(s.id));
+    toAdd.forEach((s) => {
+      const stLabel = s.serviceType ? (lang === 'tr' ? s.serviceType.nameTr : s.serviceType.nameEn) : '';
+      const shipLabel = s.ship?.name ?? '';
+      const description = [stLabel, shipLabel].filter(Boolean).join(' — ') || s.id.slice(-6);
+      append({ productId: '', serviceId: s.id, description, quantity: 1, unitPrice: 0, currency: 'EUR', total: 0 });
+    });
+    setSelectedServiceIds([]);
+  }
+
+  function toggleServiceId(id: string) {
+    setSelectedServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   }
 
   const saveMutation = useMutation({
@@ -187,6 +201,7 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
         notes: data.notes || undefined,
         items: (data.items ?? []).map((it, i) => ({
           productId: it.productId || null,
+          serviceId: it.serviceId || null,
           description: it.description,
           quantity: it.quantity,
           unitPrice: it.unitPrice,
@@ -201,19 +216,14 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
     onSuccess: onSaved,
   });
 
-  const customerOptions = [
-    { value: '', label: '—' },
-    ...(customers?.map((c) => ({ value: c.id, label: `${c.shortCode} — ${c.name}` })) ?? []),
-  ];
-
   const serviceOptions = [
     { value: '', label: watchedCustomerId ? '—' : '(önce müşteri seçin)' },
-    ...(services?.map((s) => {
+    ...(services.map((s) => {
       const stLabel = s.serviceType ? (lang === 'tr' ? s.serviceType.nameTr : s.serviceType.nameEn) : '';
       const shipLabel = s.ship?.name ?? '';
       const label = [stLabel, shipLabel].filter(Boolean).join(' — ') || s.id.slice(-6);
       return { value: s.id, label };
-    }) ?? []),
+    })),
   ];
 
   return (
@@ -240,7 +250,9 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
             <Controller
               control={control}
               name="customerId"
-              render={({ field }) => <NativeSelect {...field} options={customerOptions} />}
+              render={({ field }) => (
+                <CustomerCombobox value={field.value} onChange={field.onChange} error={!!errors.customerId} />
+              )}
             />
           </Field>
 
@@ -348,7 +360,6 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
 
         {/* Section 5: Items */}
         {(() => {
-          // Tally by currency — computed from qty*unitPrice for real-time update
           const tally = (watchedItems ?? []).reduce<Record<string, number>>((acc, it) => {
             const cur = it.currency || 'EUR';
             const lineTotal = (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0);
@@ -357,6 +368,10 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
           }, {});
           const tallyCurrencies = Object.keys(tally);
           const singleCurrency = tallyCurrencies.length === 1 ? tallyCurrencies[0] : null;
+
+          const uninvoicedServices = services.filter(
+            (s) => ((s as { _count?: { invoiceItems?: number } })._count?.invoiceItems ?? 0) === 0
+          );
 
           return (
             <div className="mt-4">
@@ -370,6 +385,64 @@ export default function InvoiceFormDialog({ open, mode, invoiceId, onClose, onSa
                   <Plus className="w-3.5 h-3.5" /> Satır Ekle
                 </button>
               </div>
+
+              {/* Services for selected customer */}
+              {watchedCustomerId && services.length > 0 && (
+                <div className="mb-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900/40 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      Müşteri Hizmetleri ({uninvoicedServices.length} faturasız / {services.length} toplam)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addSelectedServicesAsItems}
+                      disabled={selectedServiceIds.length === 0}
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-2.5 py-1 rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <PackagePlus className="w-3.5 h-3.5" />
+                      Seçilenleri Ekle ({selectedServiceIds.length})
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-0.5 max-h-44 overflow-y-auto">
+                    {services.map((s) => {
+                      const stLabel = s.serviceType ? (lang === 'tr' ? s.serviceType.nameTr : s.serviceType.nameEn) : '';
+                      const shipLabel = s.ship?.name ?? '';
+                      const label = [stLabel, shipLabel].filter(Boolean).join(' — ') || s.id.slice(-6);
+                      const invoiceCount = (s as { _count?: { invoiceItems?: number } })._count?.invoiceItems ?? 0;
+                      const alreadyInvoiced = invoiceCount > 0;
+                      const checked = selectedServiceIds.includes(s.id);
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-colors ${alreadyInvoiced ? 'opacity-50 cursor-not-allowed' : `cursor-pointer ${checked ? 'bg-blue-100 dark:bg-blue-900/40 font-medium' : 'hover:bg-white dark:hover:bg-gray-800'}`}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={alreadyInvoiced}
+                            onChange={() => !alreadyInvoiced && toggleServiceId(s.id)}
+                            className="w-3.5 h-3.5 accent-blue-600 shrink-0"
+                          />
+                          <span className={`flex-1 ${alreadyInvoiced ? 'text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>{label}</span>
+                          {alreadyInvoiced && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium shrink-0">
+                              Faturası var ({invoiceCount})
+                            </span>
+                          )}
+                          {!alreadyInvoiced && s.invoiceReady && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">
+                              Hazır
+                            </span>
+                          )}
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${s.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : s.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-700' : s.status === 'OPEN' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {s.status}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {fields.length > 0 && (
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <table className="w-full text-xs">

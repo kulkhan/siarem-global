@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'; // useState needed for filterServiceTypeId
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,14 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/select';
 import { FormSection, Field } from '@/components/shared/FormSection';
+import CustomerCombobox from '@/components/shared/CustomerCombobox';
 import { quotesApi } from '@/api/quotes';
-import { customersApi } from '@/api/customers';
 import { servicesApi } from '@/api/services';
 import { productsApi } from '@/api/products';
 import type { Product } from '@/types';
 
 const itemSchema = z.object({
   productId: z.string().optional(),
+  serviceTypeId: z.string().optional(),
   description: z.string().min(1, 'required'),
   quantity: z.coerce.number().min(0.0001),
   unitPrice: z.coerce.number().min(0),
@@ -61,11 +62,6 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
     queryKey: ['quote', quoteId],
     queryFn: () => quotesApi.getOne(quoteId!).then((r) => r.data.data),
     enabled: isEdit && !!quoteId && open,
-  });
-
-  const { data: customers } = useQuery({
-    queryKey: ['customers-mini'],
-    queryFn: () => customersApi.list({ pageSize: 500, sortBy: 'name', sortOrder: 'asc' }).then((r) => r.data.data),
   });
 
   const { data: products = [] } = useQuery({
@@ -113,7 +109,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
   useEffect(() => {
     if (!open) return;
     if (isEdit && existing) {
-      const existingItems = (existing as { items?: Array<{ productId?: string | null; description: string; quantity: number; unitPrice: number; currency: string; total: number }> }).items ?? [];
+      const existingItems = (existing as { items?: Array<{ productId?: string | null; serviceId?: string | null; description: string; quantity: number; unitPrice: number; currency: string; total: number }> }).items ?? [];
       reset({
         customerId: existing.customerId ?? '',
         serviceId: existing.serviceId ?? '',
@@ -129,6 +125,9 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
         notes: existing.notes ?? '',
         items: existingItems.map((it) => ({
           productId: it.productId ?? '',
+          serviceTypeId: (it as { serviceTypeId?: number | null }).serviceTypeId != null
+            ? String((it as { serviceTypeId?: number | null }).serviceTypeId)
+            : '',
           description: it.description,
           quantity: it.quantity,
           unitPrice: it.unitPrice,
@@ -182,6 +181,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
         notes: data.notes || undefined,
         items: (data.items ?? []).map((it, i) => ({
           productId: it.productId || null,
+          serviceTypeId: it.serviceTypeId ? parseInt(it.serviceTypeId) : null,
           description: it.description,
           quantity: it.quantity,
           unitPrice: it.unitPrice,
@@ -195,11 +195,6 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
     },
     onSuccess: onSaved,
   });
-
-  const customerOptions = [
-    { value: '', label: '—' },
-    ...(customers?.map((c) => ({ value: c.id, label: `${c.shortCode} — ${c.name}` })) ?? []),
-  ];
 
   const filteredServices = filterServiceTypeId
     ? (services ?? []).filter((s) => String(s.serviceTypeId) === filterServiceTypeId)
@@ -239,7 +234,9 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
             <Controller
               control={control}
               name="customerId"
-              render={({ field }) => <NativeSelect {...field} options={customerOptions} />}
+              render={({ field }) => (
+                <CustomerCombobox value={field.value} onChange={field.onChange} error={!!errors.customerId} />
+              )}
             />
           </Field>
 
@@ -363,7 +360,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
             <h3 className="text-sm font-semibold text-gray-700">Kalemler</h3>
             <button
               type="button"
-              onClick={() => append({ productId: '', description: '', quantity: 1, unitPrice: 0, currency: 'USD', total: 0 })}
+              onClick={() => append({ productId: '', serviceTypeId: '', description: '', quantity: 1, unitPrice: 0, currency: 'USD', total: 0 })}
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
               <Plus className="w-3.5 h-3.5" /> Satır Ekle
@@ -375,6 +372,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                 <thead className="bg-gray-50 text-gray-500 uppercase tracking-wider">
                   <tr>
                     <th className="text-left px-3 py-2 font-medium w-36">Ürün</th>
+                    <th className="text-left px-3 py-2 font-medium w-40">Hizmet</th>
                     <th className="text-left px-3 py-2 font-medium">Açıklama</th>
                     <th className="text-right px-3 py-2 font-medium w-20">Miktar</th>
                     <th className="text-right px-3 py-2 font-medium w-24">Birim Fiyat</th>
@@ -401,6 +399,19 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                             <option value="">— serbest —</option>
                             {products.map((p: Product) => (
                               <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select
+                            {...register(`items.${index}.serviceTypeId`)}
+                            className="w-full text-xs border border-gray-200 rounded px-1.5 py-1 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
+                          >
+                            <option value="">—</option>
+                            {serviceTypes.map((st) => (
+                              <option key={st.id} value={String(st.id)}>
+                                {lang === 'tr' ? st.nameTr : st.nameEn}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -458,7 +469,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
                 {tallyCurrencies.length > 0 && (
                   <tfoot className="bg-gray-50 border-t border-gray-200">
                     <tr>
-                      <td colSpan={5} className="px-3 py-1.5 text-xs text-gray-500 text-right font-medium">
+                      <td colSpan={6} className="px-3 py-1.5 text-xs text-gray-500 text-right font-medium">
                         Kalem Toplamı:
                       </td>
                       <td className="px-2 py-1.5 text-right font-bold text-gray-800 text-xs">

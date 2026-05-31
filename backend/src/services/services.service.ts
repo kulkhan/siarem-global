@@ -64,6 +64,7 @@ export async function getServices(q: ServiceQuery, companyId: string | null) {
         ship: { select: { id: true, name: true, imoNumber: true } },
         serviceType: { select: { id: true, nameEn: true, nameTr: true, code: true } },
         assignedUser: { select: { id: true, name: true } },
+        _count: { select: { invoices: true, invoiceItems: true } },
       },
     }),
     prisma.service.count({ where }),

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -87,7 +87,7 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
     staleTime: 60000,
   });
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting }, setError } =
+  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting }, setError } =
     useForm<FormData>({ resolver: zodResolver(schema) });
 
   useEffect(() => {
@@ -217,11 +217,16 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
         {/* Section 1: Basic */}
         <FormSection title={t('ships.sections.basic')}>
           <Field label={t('ships.fields.customer')} required error={errors.customerId?.message}>
-            <NativeSelect
-              {...register('customerId')}
-              options={customerOptions}
-              placeholder="—"
-              className={errors.customerId ? 'border-red-400' : ''}
+            <Controller
+              control={control}
+              name="customerId"
+              render={({ field }) => (
+                <NativeSelect
+                  {...field}
+                  options={customerOptions}
+                  className={errors.customerId ? 'border-red-400' : ''}
+                />
+              )}
             />
           </Field>
 

@@ -65,7 +65,12 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
       qc.invalidateQueries({ queryKey: ['quotes'] });
       qc.invalidateQueries({ queryKey: ['quote-detail', quoteId] });
       onClose();
-      navigate(`/services?highlight=${res.data.data.id}`);
+      const services = res.data.data;
+      if (services.length === 1) {
+        navigate(`/services?highlight=${services[0].id}`);
+      } else {
+        navigate('/services');
+      }
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
       setConvertError(err?.response?.data?.message ?? 'Dönüştürme başarısız');

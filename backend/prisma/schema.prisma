@@ -315,8 +315,9 @@ model ServiceType {
   category    String?
   description String?
 
-  company  Company?  @relation(fields: [companyId], references: [id])
-  services Service[]
+  company    Company?    @relation(fields: [companyId], references: [id])
+  services   Service[]
+  quoteItems QuoteItem[]
 
   @@map("service_types")
 }
@@ -367,11 +368,11 @@ model Service {
   createdBy    User?        @relation("ServiceCreatedBy", fields: [createdById], references: [id])
   quotes       Quote[]
   invoices     Invoice[]
+  invoiceItems InvoiceItem[] @relation("ServiceInvoiceItems")
   documents    Document[]
   logs         ServiceLog[]
   expenses     Expense[]
   report       ServiceReport?
-
   @@map("services")
 }
 
@@ -727,17 +728,19 @@ model ProductTransaction {
 
 model QuoteItem {
   id          String  @id @default(cuid())
-  quoteId     String  @map("quote_id")
-  productId   String? @map("product_id")
-  description String
-  quantity    Decimal @db.Decimal(14, 4)
-  unitPrice   Decimal @map("unit_price") @db.Decimal(14, 4)
-  currency    String  @default("USD")
-  total       Decimal @db.Decimal(14, 4)
-  sortOrder   Int     @default(0) @map("sort_order")
+  quoteId       String  @map("quote_id")
+  productId     String? @map("product_id")
+  serviceTypeId Int?    @map("service_type_id")
+  description   String
+  quantity      Decimal @db.Decimal(14, 4)
+  unitPrice     Decimal @map("unit_price") @db.Decimal(14, 4)
+  currency      String  @default("USD")
+  total         Decimal @db.Decimal(14, 4)
+  sortOrder     Int     @default(0) @map("sort_order")
 
-  quote   Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  product Product? @relation(fields: [productId], references: [id])
+  quote       Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product     Product?     @relation(fields: [productId], references: [id])
+  serviceType ServiceType? @relation(fields: [serviceTypeId], references: [id])
 
   @@map("quote_items")
 }
@@ -750,6 +753,7 @@ model InvoiceItem {
   id          String  @id @default(cuid())
   invoiceId   String  @map("invoice_id")
   productId   String? @map("product_id")
+  serviceId   String? @map("service_id")
   description String
   quantity    Decimal @db.Decimal(14, 4)
   unitPrice   Decimal @map("unit_price") @db.Decimal(14, 4)
@@ -759,6 +763,7 @@ model InvoiceItem {
 
   invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+  service Service? @relation("ServiceInvoiceItems", fields: [serviceId], references: [id])
 
   @@map("invoice_items")
 }

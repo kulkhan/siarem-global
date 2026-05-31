@@ -15,7 +15,7 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   try {
     const companyId = req.user?.companyId ?? null;
     const page = Math.max(1, parseInt(String(req.query.page ?? '1')));
-    const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize ?? '20'))));
+    const pageSize = Math.min(5000, Math.max(1, parseInt(String(req.query.pageSize ?? '20'))));
     const result = await getCustomers({
       page, pageSize,
       search: String(req.query.search ?? '').trim() || undefined,

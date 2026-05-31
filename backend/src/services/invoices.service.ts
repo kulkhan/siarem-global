@@ -84,6 +84,7 @@ export async function getInvoices(q: InvoiceQuery, companyId: string | null) {
 
 export interface InvoiceItemInput {
   productId?: string | null;
+  serviceId?: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -165,6 +166,7 @@ export async function createInvoice(data: {
           id: require('crypto').randomUUID(),
           invoiceId: inv.id,
           productId: item.productId ?? null,
+          serviceId: item.serviceId ?? null,
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -243,6 +245,7 @@ export async function updateInvoice(
             id: require('crypto').randomUUID(),
             invoiceId: id,
             productId: item.productId ?? null,
+            serviceId: item.serviceId ?? null,
             description: item.description,
             quantity: item.quantity,
             unitPrice: item.unitPrice,

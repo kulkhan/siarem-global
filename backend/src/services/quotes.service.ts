@@ -80,6 +80,7 @@ export async function getQuotes(q: QuoteQuery, companyId: string | null) {
 
 export interface QuoteItemInput {
   productId?: string | null;
+  serviceTypeId?: number | null;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -111,7 +112,13 @@ export async function getQuoteById(id: string, companyId: string | null) {
       createdBy: { select: { id: true, name: true } },
       quoteShips: { include: { ship: { select: { id: true, name: true, imoNumber: true } } } },
       invoices: { select: { id: true, refNo: true, amount: true, currency: true, status: true } },
-      items: { include: { product: true }, orderBy: { sortOrder: 'asc' } },
+      items: {
+        include: {
+          product: true,
+          serviceType: { select: { id: true, nameEn: true, nameTr: true, code: true } },
+        },
+        orderBy: { sortOrder: 'asc' },
+      },
     },
   });
   if (!quote) throw new AppError('Quote not found', 404);
@@ -163,6 +170,7 @@ export async function createQuote(data: {
           id: require('crypto').randomUUID(),
           quoteId: quote.id,
           productId: item.productId ?? null,
+          serviceTypeId: item.serviceTypeId ?? null,
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -231,6 +239,7 @@ export async function updateQuote(
             id: require('crypto').randomUUID(),
             quoteId: id,
             productId: item.productId ?? null,
+            serviceTypeId: item.serviceTypeId ?? null,
             description: item.description,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -247,49 +256,66 @@ export async function updateQuote(
 }
 
 /**
- * Creates a new OPEN service from a quote and links the quote to that service.
- * If the quote is already linked to a service, returns the existing service.
+ * Creates one OPEN service per unique serviceTypeId found in the quote's items.
+ * Falls back to a single service with no serviceType if the quote has no typed items.
+ * Links the quote to the first created service via quote.serviceId.
  * @param id - Quote ID
  * @param userId - ID of the user performing the action
  * @param companyId - Tenant isolation company ID
- * @returns Newly created (or existing linked) service
+ * @returns Array of newly created services (or existing linked service wrapped in array)
  * @throws {AppError} If quote is not found (404)
  */
 export async function convertQuoteToService(id: string, userId?: string, companyId?: string | null) {
   const tenantFilter = companyId ? { companyId } : {};
   const quote = await prisma.quote.findFirst({
     where: { id, deletedAt: null, ...tenantFilter },
-    include: { quoteShips: { take: 1 } },
+    include: {
+      quoteShips: { take: 1 },
+      items: { select: { serviceTypeId: true } },
+    },
   });
   if (!quote) throw new AppError('Quote not found', 404);
 
   if (quote.serviceId) {
     const existing = await prisma.service.findFirst({ where: { id: quote.serviceId } });
-    if (existing) return existing;
+    if (existing) return [existing];
   }
 
-  const service = await prisma.service.create({
-    data: {
-      companyId: quote.companyId,
-      customerId: quote.customerId,
-      shipId: quote.quoteShips[0]?.shipId ?? null,
-      status: 'OPEN',
-      priority: 'MEDIUM',
-      createdById: userId,
-      assignedUserId: userId ?? null,
-      logs: {
-        create: {
-          userId,
-          action: 'CREATED',
-          note: `Teklif #${quote.quoteNumber ?? quote.id.slice(-6)} üzerinden oluşturuldu`,
+  const uniqueTypeIds = [...new Set(
+    quote.items.map((i) => i.serviceTypeId).filter((v): v is number => v != null)
+  )];
+
+  const typeIdsToCreate = uniqueTypeIds.length > 0 ? uniqueTypeIds : [null];
+  const shipId = quote.quoteShips[0]?.shipId ?? null;
+  const quoteLabel = quote.quoteNumber ?? quote.id.slice(-6);
+
+  const services = await prisma.$transaction(
+    typeIdsToCreate.map((serviceTypeId) =>
+      prisma.service.create({
+        data: {
+          companyId: quote.companyId,
+          customerId: quote.customerId,
+          shipId,
+          serviceTypeId,
+          status: 'OPEN',
+          priority: 'MEDIUM',
+          createdById: userId,
+          assignedUserId: userId ?? null,
+          logs: {
+            create: {
+              userId,
+              action: 'CREATED',
+              note: `Teklif #${quoteLabel} üzerinden oluşturuldu`,
+            },
+          },
         },
-      },
-    },
-  });
+      })
+    )
+  );
 
-  await prisma.quote.update({ where: { id }, data: { serviceId: service.id } });
+  await prisma.quote.update({ where: { id }, data: { serviceId: services[0].id } });
 
-  return service;
+  return services;
 }
 
 /**
