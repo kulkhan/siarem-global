@@ -210,6 +210,7 @@ export default function ServicesPage() {
 
   function handleSaved() {
     qc.invalidateQueries({ queryKey: ['services'] });
+    qc.invalidateQueries({ queryKey: ['service-detail'] });
     setDialog(null);
     setSelectedId(null);
   }

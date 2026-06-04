@@ -96,6 +96,7 @@ export default function MeetingsPage() {
 
   function handleSaved() {
     qc.invalidateQueries({ queryKey: ['meetings'] });
+    qc.invalidateQueries({ queryKey: ['meeting-detail'] });
     setDialog(null);
     setSelectedId(null);
   }

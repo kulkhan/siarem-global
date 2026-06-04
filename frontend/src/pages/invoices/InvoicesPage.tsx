@@ -206,6 +206,8 @@ export default function InvoicesPage() {
 
   function handleSaved() {
     qc.invalidateQueries({ queryKey: ['invoices'] });
+    qc.invalidateQueries({ queryKey: ['invoice-detail'] });
+    qc.invalidateQueries({ queryKey: ['invoice'] });
     setDialog(null);
     setSelectedId(null);
   }

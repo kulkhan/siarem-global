@@ -182,6 +182,8 @@ export default function QuotesPage() {
 
   function handleSaved() {
     qc.invalidateQueries({ queryKey: ['quotes'] });
+    qc.invalidateQueries({ queryKey: ['quote-detail'] });
+    qc.invalidateQueries({ queryKey: ['quote'] });
     setDialog(null);
     setSelectedId(null);
   }
