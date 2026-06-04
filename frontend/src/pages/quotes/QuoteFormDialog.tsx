@@ -15,6 +15,7 @@ import CustomerCombobox from '@/components/shared/CustomerCombobox';
 import { quotesApi } from '@/api/quotes';
 import { servicesApi } from '@/api/services';
 import { productsApi } from '@/api/products';
+import { shipsApi } from '@/api/ships';
 import type { Product } from '@/types';
 
 const itemSchema = z.object({
@@ -34,9 +35,11 @@ const schema = z.object({
   priceEur: z.preprocess((v) => (v === '' || v == null ? undefined : Number(v)), z.number().optional()),
   priceUsd: z.preprocess((v) => (v === '' || v == null ? undefined : Number(v)), z.number().optional()),
   priceTry: z.preprocess((v) => (v === '' || v == null ? undefined : Number(v)), z.number().optional()),
-  shipCount: z.coerce.number().int().min(1).optional(),
+  shipIds: z.array(z.string()).optional(),
   quoteDate: z.string().min(1, 'required'),
   validUntil: z.string().optional(),
+  acceptedAt: z.string().optional(),
+  acceptanceMethod: z.string().optional(),
   status: z.enum(['DRAFT', 'SENT', 'APPROVED', 'REJECTED', 'REVISED', 'CANCELLED']),
   combinedInvoice: z.boolean().optional(),
   notes: z.string().max(2000).optional(),
@@ -81,7 +84,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
     resolver: zodResolver(schema),
     defaultValues: {
       status: 'DRAFT',
-      shipCount: 1,
+      shipIds: [],
       quoteDate: new Date().toISOString().slice(0, 10),
       items: [],
     },
@@ -91,11 +94,19 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
 
   const watchedCustomerId = watch('customerId');
   const watchedItems = watch('items') ?? [];
+  const watchedShipIds = watch('shipIds') ?? [];
+  const watchedStatus = watch('status');
   const [filterServiceTypeId, setFilterServiceTypeId] = useState<string>('');
 
   const { data: serviceTypes = [] } = useQuery({
     queryKey: ['service-types'],
     queryFn: () => servicesApi.types().then((r) => r.data.data),
+  });
+
+  const { data: customerShips = [] } = useQuery({
+    queryKey: ['ships-mini', watchedCustomerId],
+    queryFn: () => shipsApi.list({ customerId: watchedCustomerId, pageSize: 200, sortBy: 'name', status: 'ACTIVE' }).then((r) => r.data.data),
+    enabled: !!watchedCustomerId,
   });
 
   const { data: services } = useQuery({
@@ -117,9 +128,11 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
         priceEur: existing.priceEur ?? ('' as unknown as number),
         priceUsd: existing.priceUsd ?? ('' as unknown as number),
         priceTry: existing.priceTry ?? ('' as unknown as number),
-        shipCount: existing.shipCount ?? 1,
+        shipIds: existing.quoteShips?.map((qs) => qs.ship.id) ?? [],
         quoteDate: existing.quoteDate ? existing.quoteDate.slice(0, 10) : '',
         validUntil: existing.validUntil ? existing.validUntil.slice(0, 10) : '',
+        acceptedAt: (existing as any).acceptedAt ? (existing as any).acceptedAt.slice(0, 10) : '',
+        acceptanceMethod: (existing as any).acceptanceMethod ?? '',
         status: existing.status ?? 'DRAFT',
         combinedInvoice: existing.combinedInvoice ?? false,
         notes: existing.notes ?? '',
@@ -138,7 +151,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
     } else if (!isEdit) {
       reset({
         status: 'DRAFT',
-        shipCount: 1,
+        shipIds: [],
         quoteDate: new Date().toISOString().slice(0, 10),
         items: [],
       });
@@ -173,9 +186,12 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
         priceEur: data.priceEur != null ? Number(data.priceEur) : undefined,
         priceUsd: data.priceUsd != null ? Number(data.priceUsd) : undefined,
         priceTry: data.priceTry != null ? Number(data.priceTry) : undefined,
-        shipCount: data.shipCount ?? 1,
+        shipIds: data.shipIds ?? [],
+        shipCount: data.shipIds?.length ?? 1,
         quoteDate: data.quoteDate,
         validUntil: data.validUntil || undefined,
+        acceptedAt: data.acceptedAt || undefined,
+        acceptanceMethod: data.acceptanceMethod || undefined,
         status: data.status,
         combinedInvoice: data.combinedInvoice ?? false,
         notes: data.notes || undefined,
@@ -302,8 +318,29 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
           <Field label={t('quotes.fields.priceTry')}>
             <Input {...register('priceTry')} type="number" step="0.01" min="0" placeholder="0.00" />
           </Field>
-          <Field label={t('quotes.fields.shipCount')}>
-            <Input {...register('shipCount')} type="number" min="1" placeholder="1" />
+          <Field label={t('quotes.fields.ships')} fullWidth>
+            {customerShips.length === 0 ? (
+              <div className="text-xs text-gray-400 py-2">{watchedCustomerId ? t('quotes.fields.noShips') : t('quotes.fields.selectCustomerFirst')}</div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 p-2 border border-input rounded-md bg-background min-h-[36px]">
+                {customerShips.map((ship) => {
+                  const selected = watchedShipIds.includes(ship.id);
+                  return (
+                    <button
+                      key={ship.id}
+                      type="button"
+                      onClick={() => {
+                        const current = watchedShipIds;
+                        setValue('shipIds', selected ? current.filter((id) => id !== ship.id) : [...current, ship.id]);
+                      }}
+                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-background text-gray-600 border-gray-300 hover:border-primary'}`}
+                    >
+                      {ship.name}{ship.imoNumber ? ` (${ship.imoNumber})` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </Field>
         </FormSection>
 
@@ -334,6 +371,32 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
               )}
             />
           </Field>
+
+          {(watchedStatus === 'APPROVED') && (
+            <>
+              <Field label={t('quotes.fields.acceptedAt')}>
+                <Input {...register('acceptedAt')} type="date" />
+              </Field>
+              <Field label={t('quotes.fields.acceptanceMethod')}>
+                <Controller
+                  control={control}
+                  name="acceptanceMethod"
+                  render={({ field }) => (
+                    <NativeSelect
+                      {...field}
+                      options={[
+                        { value: '', label: '—' },
+                        { value: 'EMAIL', label: 'E-posta' },
+                        { value: 'PHONE', label: t('quotes.acceptanceMethod.phone') },
+                        { value: 'WHATSAPP', label: 'WhatsApp' },
+                        { value: 'OTHER', label: t('common.other') },
+                      ]}
+                    />
+                  )}
+                />
+              </Field>
+            </>
+          )}
         </FormSection>
 
         {/* Section 4: Notes */}

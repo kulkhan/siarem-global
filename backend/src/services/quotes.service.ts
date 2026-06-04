@@ -138,11 +138,14 @@ export async function createQuote(data: {
   serviceId?: string;
   quoteNumber?: string;
   shipCount?: number;
+  shipIds?: string[];
   priceEur?: number | null;
   priceUsd?: number | null;
   priceTry?: number | null;
   quoteDate: string;
   validUntil?: string;
+  acceptedAt?: string;
+  acceptanceMethod?: string;
   status?: QuoteStatus;
   combinedInvoice?: boolean;
   notes?: string;
@@ -150,7 +153,7 @@ export async function createQuote(data: {
   items?: QuoteItemInput[];
 }, companyId?: string) {
   if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
-  const { quoteDate, validUntil, quoteNumber: providedQuoteNumber, items, ...rest } = data;
+  const { quoteDate, validUntil, acceptedAt, quoteNumber: providedQuoteNumber, items, shipIds, ...rest } = data;
   const date = new Date(quoteDate);
   const quoteNumber = providedQuoteNumber || (await generateQuoteNumber(date, companyId));
 
@@ -162,6 +165,10 @@ export async function createQuote(data: {
         quoteNumber,
         quoteDate: date,
         ...(validUntil ? { validUntil: new Date(validUntil) } : {}),
+        ...(acceptedAt ? { acceptedAt: new Date(acceptedAt) } : {}),
+        ...(shipIds && shipIds.length > 0
+          ? { quoteShips: { create: shipIds.map((shipId) => ({ shipId })) } }
+          : {}),
       },
     });
 
@@ -202,11 +209,14 @@ export async function updateQuote(
     serviceId?: string | null;
     quoteNumber?: string;
     shipCount?: number;
+    shipIds?: string[];
     priceEur?: number | null;
     priceUsd?: number | null;
     priceTry?: number | null;
     quoteDate?: string;
     validUntil?: string | null;
+    acceptedAt?: string | null;
+    acceptanceMethod?: string | null;
     status?: QuoteStatus;
     combinedInvoice?: boolean;
     notes?: string;
@@ -216,10 +226,13 @@ export async function updateQuote(
   companyId?: string | null
 ) {
   const tenantFilter = companyId ? { companyId } : {};
-  const existing = await prisma.quote.findFirst({ where: { id, deletedAt: null, ...tenantFilter } });
+  const existing = await prisma.quote.findFirst({
+    where: { id, deletedAt: null, ...tenantFilter },
+    include: { quoteShips: true },
+  });
   if (!existing) throw new AppError('Quote not found', 404);
 
-  const { quoteDate, validUntil, items, ...rest } = data;
+  const { quoteDate, validUntil, acceptedAt, items, shipIds, ...rest } = data;
 
   return prisma.$transaction(async (tx) => {
     const quote = await tx.quote.update({
@@ -229,8 +242,17 @@ export async function updateQuote(
         updatedById: userId,
         ...(quoteDate ? { quoteDate: new Date(quoteDate) } : {}),
         ...(validUntil !== undefined ? { validUntil: validUntil ? new Date(validUntil) : null } : {}),
+        ...(acceptedAt !== undefined ? { acceptedAt: acceptedAt ? new Date(acceptedAt) : null } : {}),
       },
     });
+
+    // Replace quoteShips if shipIds provided
+    if (shipIds !== undefined) {
+      await tx.quoteShip.deleteMany({ where: { quoteId: id } });
+      if (shipIds.length > 0) {
+        await tx.quoteShip.createMany({ data: shipIds.map((shipId) => ({ quoteId: id, shipId })) });
+      }
+    }
 
     if (items !== undefined) {
       await tx.quoteItem.deleteMany({ where: { quoteId: id } });
@@ -249,6 +271,50 @@ export async function updateQuote(
             sortOrder: item.sortOrder ?? i,
           })),
         });
+      }
+    }
+
+    // Auto-create services when status changed to APPROVED and no service exists
+    if (data.status === 'APPROVED' && existing.status !== 'APPROVED' && !existing.serviceId) {
+      const freshQuote = await tx.quote.findFirst({
+        where: { id },
+        include: { quoteShips: true, items: { select: { serviceTypeId: true } } },
+      });
+      if (freshQuote) {
+        const uniqueTypeIds = [...new Set(
+          freshQuote.items.map((i) => i.serviceTypeId).filter((v): v is number => v != null)
+        )];
+        const typeIdsToCreate = uniqueTypeIds.length > 0 ? uniqueTypeIds : [null];
+        const shipIds2 = freshQuote.quoteShips.map((qs) => qs.shipId);
+        const shipIdsToUse = shipIds2.length > 0 ? shipIds2 : [null as string | null];
+
+        const created: string[] = [];
+        for (const shipId of shipIdsToUse) {
+          for (const serviceTypeId of typeIdsToCreate) {
+            const svc = await tx.service.create({
+              data: {
+                companyId: freshQuote.companyId,
+                customerId: freshQuote.customerId,
+                shipId: shipId ?? undefined,
+                serviceTypeId: serviceTypeId ?? undefined,
+                status: 'OPEN',
+                priority: 'MEDIUM',
+                createdById: userId,
+                logs: {
+                  create: {
+                    userId,
+                    action: 'CREATED',
+                    note: `Teklif #${freshQuote.quoteNumber} onayından otomatik oluşturuldu`,
+                  },
+                },
+              },
+            });
+            created.push(svc.id);
+          }
+        }
+        if (created.length > 0) {
+          await tx.quote.update({ where: { id }, data: { serviceId: created[0] } });
+        }
       }
     }
 

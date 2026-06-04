@@ -17,6 +17,7 @@ import CompaniesPage from '@/pages/admin/CompaniesPage';
 import DevTasksPage from '@/pages/admin/DevTasksPage';
 import HelpPage from '@/pages/help/HelpPage';
 import ComplaintsPage from '@/pages/complaints/ComplaintsPage';
+import TasksPage from '@/pages/tasks/TasksPage';
 import PublicComplaintPage from '@/pages/public/PublicComplaintPage';
 import ProductsPage from '@/pages/products/ProductsPage';
 import ReportsPage from '@/pages/reports/ReportsPage';
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="/quotes/*" element={<QuotesPage />} />
             <Route path="/invoices/*" element={<InvoicesPage />} />
             <Route path="/meetings/*" element={<MeetingsPage />} />
+            <Route path="/tasks/*" element={<TasksPage />} />
             <Route path="/expenses/*" element={<AdminOnly><ExpensesPage /></AdminOnly>} />
             <Route path="/complaints/*" element={<ComplaintsPage />} />
             <Route path="/products/*" element={<AdminOnly><ProductsPage /></AdminOnly>} />

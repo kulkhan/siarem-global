@@ -19,6 +19,8 @@ export interface Quote {
   priceTry?: number;
   quoteDate: string;
   validUntil?: string;
+  acceptedAt?: string;
+  acceptanceMethod?: string;
   status: QuoteStatus;
   combinedInvoice: boolean;
   notes?: string;

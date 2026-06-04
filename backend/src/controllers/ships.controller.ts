@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import {
   getShips, getShipById, createShip, updateShip,
   deleteShip, getShipTypes, getFlagOptions,
+  getBillingEntities, createBillingEntity as createBE, updateBillingEntity as updateBE, deleteBillingEntity as deleteBE,
 } from '../services/ships.service';
 import { ShipStatus } from '@prisma/client';
 import { logAudit } from '../services/audit.service';
@@ -127,5 +128,37 @@ export async function flagOptions(req: Request, res: Response, next: NextFunctio
     const companyId = req.user?.companyId ?? null;
     const data = await getFlagOptions(companyId);
     res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function listBillingEntities(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId ?? null;
+    const data = await getBillingEntities(req.params.id, companyId);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function createBillingEntity(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId!;
+    const data = await createBE(req.params.id, req.body, companyId);
+    res.status(201).json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function updateBillingEntity(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId ?? null;
+    const data = await updateBE(req.params.entityId, req.body, companyId);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+export async function deleteBillingEntity(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId ?? null;
+    await deleteBE(req.params.entityId, companyId);
+    res.json({ success: true });
   } catch (err) { next(err); }
 }

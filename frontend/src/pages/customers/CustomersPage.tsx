@@ -11,14 +11,13 @@ import { customersApi, type Customer } from '@/api/customers';
 import CustomerFormDialog from './CustomerFormDialog';
 import CustomerDetailDrawer from './CustomerDetailDrawer';
 
-const PAGE_SIZE = 20;
-
 export default function CustomersPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
 
   // State
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [country, setCountry] = useState('');
@@ -39,10 +38,10 @@ export default function CustomersPage() {
 
   // Queries
   const { data, isLoading } = useQuery({
-    queryKey: ['customers', page, debouncedSearch, country, isActive, sortBy, sortOrder],
+    queryKey: ['customers', page, pageSize, debouncedSearch, country, isActive, sortBy, sortOrder],
     queryFn: () =>
       customersApi.list({
-        page, pageSize: PAGE_SIZE,
+        page, pageSize,
         search: debouncedSearch || undefined,
         country: country || undefined,
         isActive: isActive ? isActive === 'true' : undefined,
@@ -218,6 +217,17 @@ export default function CustomersPage() {
           options={statusOptions}
           className="w-32"
         />
+
+        <NativeSelect
+          value={String(pageSize)}
+          onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+          options={[
+            { value: '20', label: '20' },
+            { value: '50', label: '50' },
+            { value: '100', label: '100' },
+          ]}
+          className="w-20"
+        />
       </div>
 
       {/* Grid */}
@@ -227,7 +237,7 @@ export default function CustomersPage() {
           rows={data?.data ?? []}
           total={data?.total ?? 0}
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           sortBy={sortBy}
           sortOrder={sortOrder}
           loading={isLoading}

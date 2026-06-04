@@ -24,9 +24,56 @@ export interface Ship {
   isLargeVessel: boolean;
   status: 'ACTIVE' | 'PASSIVE' | 'SOLD' | 'SCRAPPED';
   notes?: string;
+  // extended
+  callSign?: string;
+  homePort?: string;
+  iceClass?: string;
+  eexi?: number;
+  owner?: string;
+  technicalManager?: string;
+  customerRelationType?: string;
+  customerSince?: string;
+  // compliance
+  euMrvMpStatus?: string;
+  ukMrvMpStatus?: string;
+  fuelEuMpStatus?: string;
+  imoDcsStatus?: string;
+  euEtsStatus?: string;
+  seempPart2?: string;
+  seempPart3?: string;
   createdAt: string;
   customer?: { id: string; name: string; shortCode: string };
   shipType?: ShipType;
+  shipLogs?: ShipLog[];
+  billingEntities?: ShipBillingEntity[];
+}
+
+export interface ShipLog {
+  id: string;
+  shipId: string;
+  userId?: string;
+  action: string;
+  field?: string;
+  oldValue?: string;
+  newValue?: string;
+  note?: string;
+  createdAt: string;
+  user?: { id: string; name: string };
+}
+
+export interface ShipBillingEntity {
+  id: string;
+  shipId: string;
+  companyId: string;
+  entityName: string;
+  entityAddress?: string;
+  entityTaxNo?: string;
+  entityCountry?: string;
+  entityEmail?: string;
+  isDefault: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ShipListParams {
@@ -98,6 +145,18 @@ export const shipsApi = {
 
   deleteCertDocument: (shipId: string, certId: string, docId: string) =>
     api.delete(`/ships/${shipId}/certificates/${certId}/documents/${docId}`),
+
+  listBillingEntities: (shipId: string) =>
+    api.get<{ success: boolean; data: ShipBillingEntity[] }>(`/ships/${shipId}/billing-entities`),
+
+  createBillingEntity: (shipId: string, data: Partial<ShipBillingEntity>) =>
+    api.post<{ success: boolean; data: ShipBillingEntity }>(`/ships/${shipId}/billing-entities`, data),
+
+  updateBillingEntity: (shipId: string, entityId: string, data: Partial<ShipBillingEntity>) =>
+    api.put<{ success: boolean; data: ShipBillingEntity }>(`/ships/${shipId}/billing-entities/${entityId}`, data),
+
+  deleteBillingEntity: (shipId: string, entityId: string) =>
+    api.delete(`/ships/${shipId}/billing-entities/${entityId}`),
 };
 
 export interface ShipCertificate {

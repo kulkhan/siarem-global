@@ -28,6 +28,7 @@
     "documents": "Dokümanlar",
     "reports": "Raporlar",
     "settings": "Ayarlar",
+    "tasks": "Görevler",
     "devTasks": "Geliştirme Takibi"
   },
   "dashboard": {
@@ -236,6 +237,18 @@
       "accountNo": "Hesap No",
       "currency": "Para Birimi",
       "notes": "Notlar"
+    },
+    "parentCustomer": {
+      "title": "Ana Firma",
+      "label": "Ana Müşteri"
+    },
+    "subCustomers": {
+      "title": "Alt Firmalar",
+      "noSubs": "Alt firma bulunmuyor"
+    },
+    "shipsList": {
+      "title": "Bağlı Gemiler",
+      "noShips": "Bu müşteriye kayıtlı gemi yok"
     }
   },
   "services": {
@@ -325,9 +338,19 @@
       "priceUsd": "Fiyat (USD)",
       "priceTry": "Fiyat (TRY)",
       "shipCount": "Gemi Sayısı",
+      "ships": "Gemiler",
       "combinedInvoice": "Birleşik Fatura",
       "notes": "Notlar",
-      "createdBy": "Oluşturan"
+      "createdBy": "Oluşturan",
+      "acceptedAt": "Kabul Tarihi",
+      "acceptanceMethod": "Kabul Yöntemi"
+    },
+    "acceptanceMethod": {
+      "EMAIL": "E-posta",
+      "FAX": "Faks",
+      "PHONE": "Telefon",
+      "IN_PERSON": "Yüz Yüze",
+      "PORTAL": "Portal"
     },
     "filter": {
       "search": "Teklif no veya müşteri ara...",
@@ -515,7 +538,10 @@
     "sections": {
       "basic": "Temel Bilgiler",
       "technical": "Teknik Bilgiler",
-      "compliance": "Uyumluluk & Sistem"
+      "compliance": "Uyumluluk & Sistem",
+      "extended": "Ek Bilgiler",
+      "shipCompliance": "Gemi Uyumluluk Durumları",
+      "history": "Değişiklik Geçmişi"
     },
     "fields": {
       "name": "Gemi Adı",
@@ -533,7 +559,45 @@
       "adminAuthority": "İdari Otorite",
       "isLargeVessel": "> 5000 GT",
       "status": "Durum",
-      "notes": "Notlar"
+      "notes": "Notlar",
+      "callSign": "Çağrı İşareti",
+      "homePort": "Bağlama Limanı",
+      "iceClass": "Buz Sınıfı",
+      "eexi": "EEXI",
+      "owner": "Gemi Sahibi",
+      "technicalManager": "Teknik Müdür",
+      "customerRelationType": "İlişki Türü",
+      "customerSince": "Müşteri Başlangıç Tarihi",
+      "euMrvMpStatus": "EU MRV MP Durumu",
+      "ukMrvMpStatus": "UK MRV MP Durumu",
+      "fuelEuMpStatus": "FuelEU MP Durumu",
+      "imoDcsStatus": "IMO DCS Durumu",
+      "euEtsStatus": "EU ETS Durumu",
+      "seempPart2": "SEEMP Bölüm 2",
+      "seempPart3": "SEEMP Bölüm 3"
+    },
+    "customerRelationType": {
+      "OWNER": "Gemi Sahibi",
+      "MANAGER": "Teknik Yönetici",
+      "OPERATOR": "Operatör",
+      "CHARTERER": "Kiracı",
+      "OTHER": "Diğer"
+    },
+    "complianceStatus": {
+      "": "—",
+      "OK": "Tamamlandı",
+      "IN_PROGRESS": "Devam Ediyor",
+      "PENDING": "Beklemede",
+      "NOT_APPLICABLE": "Geçerli Değil",
+      "MISSING": "Eksik"
+    },
+    "history": {
+      "noHistory": "Henüz değişiklik kaydı yok",
+      "changedField": "Alan",
+      "oldValue": "Eski Değer",
+      "newValue": "Yeni Değer",
+      "changedBy": "Değiştiren",
+      "changedAt": "Tarih"
     },
     "filter": {
       "search": "Gemi veya müşteri ara...",
@@ -721,6 +785,46 @@
       "inProgress": "Devam Eden",
       "done": "Tamamlanan",
       "openBugs": "Açık Hata"
+    }
+  },
+  "tasks": {
+    "title": "Görevler",
+    "addTitle": "Yeni Görev",
+    "editTitle": "Görev Düzenle",
+    "deleteConfirm": "Bu görevi silmek istediğinize emin misiniz?",
+    "noTasks": "Görev bulunamadı",
+    "sections": {
+      "basic": "Görev Bilgileri"
+    },
+    "fields": {
+      "title": "Başlık",
+      "description": "Açıklama",
+      "assignedUser": "Atanan Kişi",
+      "meeting": "Toplantı",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "dueDate": "Son Tarih",
+      "completedAt": "Tamamlanma Tarihi",
+      "createdBy": "Oluşturan",
+      "createdAt": "Oluşturma Tarihi"
+    },
+    "status": {
+      "TODO": "Yapılacak",
+      "IN_PROGRESS": "Devam Ediyor",
+      "DONE": "Tamamlandı",
+      "CANCELLED": "İptal"
+    },
+    "priority": {
+      "LOW": "Düşük",
+      "MEDIUM": "Orta",
+      "HIGH": "Yüksek",
+      "URGENT": "Acil"
+    },
+    "filter": {
+      "search": "Görev ara...",
+      "status": "Durum",
+      "priority": "Öncelik",
+      "assignedUser": "Atanan"
     }
   },
   "help": {

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Building2, Wrench, FileText,
   Receipt, CalendarDays, FolderOpen, BarChart3, Settings,
-  LogOut, Anchor, ChevronLeft, ChevronRight, Wallet, Globe, MessageSquare, Ship, Package, ClipboardList
+  LogOut, Anchor, ChevronLeft, ChevronRight, Wallet, Globe, MessageSquare, Ship, Package, ClipboardList, CheckSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -22,6 +22,7 @@ const navItems = [
   { key: 'services', path: '/services', icon: Wrench },
   { key: 'invoices', path: '/invoices', icon: Receipt },
   { key: 'meetings', path: '/meetings', icon: CalendarDays },
+  { key: 'tasks', path: '/tasks', icon: CheckSquare },
   { key: 'complaints', path: '/complaints', icon: MessageSquare },
   { key: 'products', path: '/products', icon: Package, adminOnly: true },
   { key: 'expenses', path: '/expenses', icon: Wallet, adminOnly: true },

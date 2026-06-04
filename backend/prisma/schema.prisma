@@ -114,6 +114,8 @@ model Company {
   shipCertificates     ShipCertificate[]
   customerNotes        CustomerNote[]
   productTransactions  ProductTransaction[]
+  tasks                Task[]
+  shipBillingEntities  ShipBillingEntity[]
 
   @@map("companies")
 }
@@ -150,6 +152,9 @@ model User {
   serviceReports      ServiceReport[]      @relation("ServiceReportCreatedBy")
   customerNotes       CustomerNote[]       @relation("CustomerNoteUser")
   productTransactions ProductTransaction[] @relation("ProductTransactionCreatedBy")
+  assignedTasks       Task[]               @relation("TaskAssignee")
+  createdTasks        Task[]               @relation("TaskCreatedBy")
+  shipLogs            ShipLog[]            @relation("ShipLogUser")
 
   @@unique([companyId, email])
   @@map("users")
@@ -160,39 +165,42 @@ model User {
 // ─────────────────────────────────────────
 
 model Customer {
-  id          String    @id @default(cuid())
-  companyId   String    @map("company_id")
-  shortCode   String
-  name        String
-  email       String?
-  phone       String?
-  address     String?
-  city        String?
-  country     String?
-  taxNumber   String?
-  notes       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  createdById String?
-  updatedById String?
-  deletedAt   DateTime?
-  deletedById String?
+  id               String    @id @default(cuid())
+  companyId        String    @map("company_id")
+  shortCode        String
+  name             String
+  email            String?
+  phone            String?
+  address          String?
+  city             String?
+  country          String?
+  taxNumber        String?
+  notes            String?
+  isActive         Boolean   @default(true)
+  parentCustomerId String?   @map("parent_customer_id")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdById      String?
+  updatedById      String?
+  deletedAt        DateTime?
+  deletedById      String?
 
-  company       Company                @relation(fields: [companyId], references: [id])
-  contacts      Contact[]
-  ships         Ship[]
-  services      Service[]
-  quotes        Quote[]
-  invoices      Invoice[]
-  meetings      Meeting[]
-  documents     Document[]
-  expenses      Expense[]
-  complaints    Complaint[]
-  bankAccounts  CustomerBankAccount[]
-  createdBy     User?                  @relation("CustomerCreatedBy", fields: [createdById], references: [id])
-  assignees     CustomerAssignee[]
-  customerNotes CustomerNote[]
+  company         Company                @relation(fields: [companyId], references: [id])
+  parentCustomer  Customer?              @relation("CustomerChildren", fields: [parentCustomerId], references: [id])
+  subCustomers    Customer[]             @relation("CustomerChildren")
+  contacts        Contact[]
+  ships           Ship[]
+  services        Service[]
+  quotes          Quote[]
+  invoices        Invoice[]
+  meetings        Meeting[]
+  documents       Document[]
+  expenses        Expense[]
+  complaints      Complaint[]
+  bankAccounts    CustomerBankAccount[]
+  createdBy       User?                  @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  assignees       CustomerAssignee[]
+  customerNotes   CustomerNote[]
 
   @@unique([companyId, shortCode])
   @@map("customers")
@@ -280,6 +288,26 @@ model Ship {
   isLargeVessel         Boolean    @default(true) // > 5000 GT
   status                ShipStatus @default(ACTIVE)
   notes                 String?
+
+  // Extended identification fields
+  callSign              String?    @map("call_sign")
+  homePort              String?    @map("home_port")
+  iceClass              String?    @map("ice_class")
+  eexi                  Float?
+  owner                 String?
+  technicalManager      String?    @map("technical_manager")
+  customerRelationType  String?    @map("customer_relation_type") // OWNER | ISM | MANAGER | CHARTERER
+  customerSince         DateTime?  @map("customer_since")
+
+  // Ship-level compliance statuses (tracked separately from per-service statuses)
+  euMrvMpStatus   String?  @map("eu_mrv_mp_status")
+  ukMrvMpStatus   String?  @map("uk_mrv_mp_status")
+  fuelEuMpStatus  String?  @map("fuel_eu_mp_status")
+  imoDcsStatus    String?  @map("imo_dcs_status")
+  euEtsStatus     String?  @map("eu_ets_status")
+  seempPart2      String?  @map("seemp_part2")
+  seempPart3      String?  @map("seemp_part3")
+
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   createdById           String?
@@ -287,19 +315,66 @@ model Ship {
   deletedAt             DateTime?
   deletedById           String?
 
-  company      Company           @relation(fields: [companyId], references: [id])
-  customer     Customer          @relation(fields: [customerId], references: [id])
-  shipType     ShipType?         @relation(fields: [shipTypeId], references: [id])
-  services     Service[]
-  quoteShips   QuoteShip[]
-  meetings     Meeting[]
-  documents    Document[]
-  expenses     Expense[]
-  createdBy    User?             @relation("ShipCreatedBy", fields: [createdById], references: [id])
-  certificates ShipCertificate[]
+  company          Company             @relation(fields: [companyId], references: [id])
+  customer         Customer            @relation(fields: [customerId], references: [id])
+  shipType         ShipType?           @relation(fields: [shipTypeId], references: [id])
+  services         Service[]
+  quoteShips       QuoteShip[]
+  meetings         Meeting[]
+  documents        Document[]
+  expenses         Expense[]
+  createdBy        User?               @relation("ShipCreatedBy", fields: [createdById], references: [id])
+  certificates     ShipCertificate[]
+  shipLogs         ShipLog[]
+  billingEntities  ShipBillingEntity[]
 
   @@unique([companyId, imoNumber])
   @@map("ships")
+}
+
+// ─────────────────────────────────────────
+// SHIP LOGS (change history)
+// ─────────────────────────────────────────
+
+model ShipLog {
+  id        String   @id @default(cuid())
+  shipId    String   @map("ship_id")
+  userId    String?  @map("user_id")
+  action    String   // CREATED | UPDATED | STATUS_CHANGED
+  field     String?
+  oldValue  String?  @map("old_value")
+  newValue  String?  @map("new_value")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ship Ship  @relation(fields: [shipId], references: [id], onDelete: Cascade)
+  user User? @relation("ShipLogUser", fields: [userId], references: [id])
+
+  @@map("ship_logs")
+}
+
+// ─────────────────────────────────────────
+// SHIP BILLING ENTITIES (per-ship invoice address)
+// ─────────────────────────────────────────
+
+model ShipBillingEntity {
+  id              String   @id @default(cuid())
+  companyId       String   @map("company_id")
+  shipId          String   @map("ship_id")
+  entityName      String   @map("entity_name")
+  entityAddress   String?  @map("entity_address")
+  entityTaxNo     String?  @map("entity_tax_no")
+  entityCountry   String?  @map("entity_country")
+  entityEmail     String?  @map("entity_email")
+  isDefault       Boolean  @default(false) @map("is_default")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  ship    Ship    @relation(fields: [shipId], references: [id], onDelete: Cascade)
+
+  @@map("ship_billing_entities")
 }
 
 // ─────────────────────────────────────────
@@ -408,26 +483,28 @@ model Quote {
   revision      Int         @default(1)
   parentQuoteId String?     // links to previous revision
 
-  customerId     String
-  serviceId      String?
-  createdById    String?
-  shipCount      Int         @default(1)
-  unitPrice      Float?
-  currency       String      @default("EUR")
-  totalAmount    Float?
-  priceEur       Float?
-  priceUsd       Float?
-  priceTry       Float?
-  quoteDate      DateTime
-  validUntil     DateTime?
-  status         QuoteStatus @default(DRAFT)
-  combinedInvoice Boolean    @default(false)
-  notes          String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  updatedById    String?
-  deletedAt      DateTime?
-  deletedById    String?
+  customerId        String
+  serviceId         String?
+  createdById       String?
+  shipCount         Int         @default(1)
+  unitPrice         Float?
+  currency          String      @default("EUR")
+  totalAmount       Float?
+  priceEur          Float?
+  priceUsd          Float?
+  priceTry          Float?
+  quoteDate         DateTime
+  validUntil        DateTime?
+  acceptedAt        DateTime?   @map("accepted_at")
+  acceptanceMethod  String?     @map("acceptance_method") // EMAIL | PHONE | WHATSAPP | OTHER
+  status            QuoteStatus @default(DRAFT)
+  combinedInvoice   Boolean     @default(false)
+  notes             String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  updatedById       String?
+  deletedAt         DateTime?
+  deletedById       String?
 
   company     Company     @relation(fields: [companyId], references: [id])
   customer    Customer    @relation(fields: [customerId], references: [id])
@@ -548,6 +625,7 @@ model Meeting {
   ship      Ship?      @relation(fields: [shipId], references: [id])
   createdBy User?      @relation(fields: [createdById], references: [id])
   documents Document[]
+  tasks     Task[]
 
   @@map("meetings")
 }
@@ -892,4 +970,31 @@ model DevTask {
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("dev_tasks")
+}
+
+// ─────────────────────────────────────────
+// TASKS (Team task manager — linked to meetings)
+// ─────────────────────────────────────────
+
+model Task {
+  id             String    @id @default(cuid())
+  companyId      String    @map("company_id")
+  title          String
+  description    String?
+  assignedUserId String?   @map("assigned_user_id")
+  meetingId      String?   @map("meeting_id")
+  status         String    @default("TODO") // TODO | IN_PROGRESS | DONE | CANCELLED
+  priority       String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  dueDate        DateTime? @map("due_date")
+  completedAt    DateTime? @map("completed_at")
+  createdById    String?   @map("created_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  company      Company  @relation(fields: [companyId], references: [id])
+  assignedUser User?    @relation("TaskAssignee", fields: [assignedUserId], references: [id])
+  meeting      Meeting? @relation(fields: [meetingId], references: [id])
+  createdBy    User?    @relation("TaskCreatedBy", fields: [createdById], references: [id])
+
+  @@map("tasks")
 }

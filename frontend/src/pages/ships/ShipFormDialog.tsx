@@ -53,6 +53,23 @@ const schema = z.object({
   isLargeVessel: z.string().optional(),
   status: z.enum(['ACTIVE', 'PASSIVE', 'SOLD', 'SCRAPPED']),
   notes: z.string().max(1000).optional(),
+  // extended fields
+  callSign: z.string().max(20).optional(),
+  homePort: z.string().max(100).optional(),
+  iceClass: z.string().max(50).optional(),
+  eexi: z.string().optional(),
+  owner: z.string().max(200).optional(),
+  technicalManager: z.string().max(200).optional(),
+  customerRelationType: z.string().optional(),
+  customerSince: z.string().optional(),
+  // compliance
+  euMrvMpStatus: z.string().optional(),
+  ukMrvMpStatus: z.string().optional(),
+  fuelEuMpStatus: z.string().optional(),
+  imoDcsStatus: z.string().optional(),
+  euEtsStatus: z.string().optional(),
+  seempPart2: z.string().optional(),
+  seempPart3: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -110,6 +127,21 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
         isLargeVessel: existing.isLargeVessel !== false ? 'true' : 'false',
         status: existing.status ?? 'ACTIVE',
         notes: existing.notes ?? '',
+        callSign: existing.callSign ?? '',
+        homePort: existing.homePort ?? '',
+        iceClass: existing.iceClass ?? '',
+        eexi: existing.eexi != null ? String(existing.eexi) : '',
+        owner: existing.owner ?? '',
+        technicalManager: existing.technicalManager ?? '',
+        customerRelationType: existing.customerRelationType ?? '',
+        customerSince: existing.customerSince ? existing.customerSince.slice(0, 10) : '',
+        euMrvMpStatus: existing.euMrvMpStatus ?? '',
+        ukMrvMpStatus: existing.ukMrvMpStatus ?? '',
+        fuelEuMpStatus: existing.fuelEuMpStatus ?? '',
+        imoDcsStatus: existing.imoDcsStatus ?? '',
+        euEtsStatus: existing.euEtsStatus ?? '',
+        seempPart2: existing.seempPart2 ?? '',
+        seempPart3: existing.seempPart3 ?? '',
       });
     } else if (!isEdit) {
       reset({
@@ -117,6 +149,10 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
         grossTonnage: '', dwt: '', netTonnage: '', builtYear: '',
         classificationSociety: '', emissionVerifier: '', itSystem: '',
         adminAuthority: '', isLargeVessel: 'true', status: 'ACTIVE', notes: '',
+        callSign: '', homePort: '', iceClass: '', eexi: '', owner: '', technicalManager: '',
+        customerRelationType: '', customerSince: '',
+        euMrvMpStatus: '', ukMrvMpStatus: '', fuelEuMpStatus: '', imoDcsStatus: '', euEtsStatus: '',
+        seempPart2: '', seempPart3: '',
       });
     }
   }, [open, isEdit, existing, reset]);
@@ -140,6 +176,21 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
         isLargeVessel: data.isLargeVessel !== 'false',
         status: data.status,
         notes: data.notes || undefined,
+        callSign: data.callSign || undefined,
+        homePort: data.homePort || undefined,
+        iceClass: data.iceClass || undefined,
+        eexi: data.eexi ? parseFloat(data.eexi) : undefined,
+        owner: data.owner || undefined,
+        technicalManager: data.technicalManager || undefined,
+        customerRelationType: data.customerRelationType || undefined,
+        customerSince: data.customerSince || undefined,
+        euMrvMpStatus: data.euMrvMpStatus || undefined,
+        ukMrvMpStatus: data.ukMrvMpStatus || undefined,
+        fuelEuMpStatus: data.fuelEuMpStatus || undefined,
+        imoDcsStatus: data.imoDcsStatus || undefined,
+        euEtsStatus: data.euEtsStatus || undefined,
+        seempPart2: data.seempPart2 || undefined,
+        seempPart3: data.seempPart3 || undefined,
       };
       if (isEdit && shipId) return shipsApi.update(shipId, payload);
       return shipsApi.create(payload);
@@ -191,6 +242,24 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
   const largeOptions = [
     { value: 'true', label: t('common.yes') + ' (≥ 5000 GT)' },
     { value: 'false', label: t('common.no') + ' (< 5000 GT)' },
+  ];
+
+  const customerRelationOptions = [
+    { value: '', label: '—' },
+    { value: 'OWNER', label: t('ships.customerRelationType.OWNER') },
+    { value: 'MANAGER', label: t('ships.customerRelationType.MANAGER') },
+    { value: 'OPERATOR', label: t('ships.customerRelationType.OPERATOR') },
+    { value: 'CHARTERER', label: t('ships.customerRelationType.CHARTERER') },
+    { value: 'OTHER', label: t('ships.customerRelationType.OTHER') },
+  ];
+
+  const complianceOptions = [
+    { value: '', label: '—' },
+    { value: 'OK', label: t('ships.complianceStatus.OK') },
+    { value: 'IN_PROGRESS', label: t('ships.complianceStatus.IN_PROGRESS') },
+    { value: 'PENDING', label: t('ships.complianceStatus.PENDING') },
+    { value: 'NOT_APPLICABLE', label: t('ships.complianceStatus.NOT_APPLICABLE') },
+    { value: 'MISSING', label: t('ships.complianceStatus.MISSING') },
   ];
 
   return (
@@ -308,6 +377,72 @@ export default function ShipFormDialog({ open, mode, shipId, onClose, onSaved }:
 
           <Field label={t('ships.fields.notes')} fullWidth>
             <Textarea {...register('notes')} rows={2} placeholder="Notlar..." />
+          </Field>
+        </FormSection>
+
+        {/* Section 4: Extended */}
+        <FormSection title={t('ships.sections.extended')}>
+          <Field label={t('ships.fields.callSign')}>
+            <Input {...register('callSign')} placeholder="TCAB1" />
+          </Field>
+
+          <Field label={t('ships.fields.homePort')}>
+            <Input {...register('homePort')} placeholder="Istanbul" />
+          </Field>
+
+          <Field label={t('ships.fields.iceClass')}>
+            <Input {...register('iceClass')} placeholder="IA, IB, IC..." />
+          </Field>
+
+          <Field label={t('ships.fields.eexi')}>
+            <Input {...register('eexi')} type="number" step="0.01" placeholder="0.00" min={0} />
+          </Field>
+
+          <Field label={t('ships.fields.owner')}>
+            <Input {...register('owner')} placeholder="Owner company name..." />
+          </Field>
+
+          <Field label={t('ships.fields.technicalManager')}>
+            <Input {...register('technicalManager')} placeholder="Technical manager name..." />
+          </Field>
+
+          <Field label={t('ships.fields.customerRelationType')}>
+            <NativeSelect {...register('customerRelationType')} options={customerRelationOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.customerSince')}>
+            <Input {...register('customerSince')} type="date" />
+          </Field>
+        </FormSection>
+
+        {/* Section 5: Ship Compliance Status */}
+        <FormSection title={t('ships.sections.shipCompliance')}>
+          <Field label={t('ships.fields.euMrvMpStatus')}>
+            <NativeSelect {...register('euMrvMpStatus')} options={complianceOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.ukMrvMpStatus')}>
+            <NativeSelect {...register('ukMrvMpStatus')} options={complianceOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.fuelEuMpStatus')}>
+            <NativeSelect {...register('fuelEuMpStatus')} options={complianceOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.imoDcsStatus')}>
+            <NativeSelect {...register('imoDcsStatus')} options={complianceOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.euEtsStatus')}>
+            <NativeSelect {...register('euEtsStatus')} options={complianceOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.seempPart2')}>
+            <NativeSelect {...register('seempPart2')} options={complianceOptions} />
+          </Field>
+
+          <Field label={t('ships.fields.seempPart3')}>
+            <NativeSelect {...register('seempPart3')} options={complianceOptions} />
           </Field>
         </FormSection>
 

@@ -78,6 +78,12 @@ export async function getShipById(id: string, companyId: string | null) {
       customer: { select: { id: true, name: true, shortCode: true } },
       shipType: true,
       _count: { select: { services: true } },
+      shipLogs: {
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        include: { user: { select: { id: true, name: true } } },
+      },
+      billingEntities: { orderBy: { isDefault: 'desc' } },
     },
   });
   if (!s) throw new AppError('Ship not found', 404);
@@ -92,28 +98,43 @@ export async function getShipById(id: string, companyId: string | null) {
  * @returns Created ship record
  * @throws {AppError} If tenant is missing (400) or IMO number already exists (400)
  */
-export async function createShip(
-  data: {
-    customerId: string;
-    name: string;
-    imoNumber?: string;
-    shipTypeId?: number;
-    flag?: string;
-    grossTonnage?: number;
-    dwt?: number;
-    netTonnage?: number;
-    builtYear?: number;
-    classificationSociety?: string;
-    emissionVerifier?: string;
-    itSystem?: string;
-    adminAuthority?: string;
-    isLargeVessel?: boolean;
-    status?: ShipStatus;
-    notes?: string;
-  },
-  userId?: string,
-  companyId?: string
-) {
+export type ShipData = {
+  customerId: string;
+  name: string;
+  imoNumber?: string;
+  shipTypeId?: number;
+  flag?: string;
+  grossTonnage?: number;
+  dwt?: number;
+  netTonnage?: number;
+  builtYear?: number;
+  classificationSociety?: string;
+  emissionVerifier?: string;
+  itSystem?: string;
+  adminAuthority?: string;
+  isLargeVessel?: boolean;
+  status?: ShipStatus;
+  notes?: string;
+  // extended fields
+  callSign?: string;
+  homePort?: string;
+  iceClass?: string;
+  eexi?: number;
+  owner?: string;
+  technicalManager?: string;
+  customerRelationType?: string;
+  customerSince?: string;
+  // compliance
+  euMrvMpStatus?: string;
+  ukMrvMpStatus?: string;
+  fuelEuMpStatus?: string;
+  imoDcsStatus?: string;
+  euEtsStatus?: string;
+  seempPart2?: string;
+  seempPart3?: string;
+};
+
+export async function createShip(data: ShipData, userId?: string, companyId?: string) {
   if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
   if (data.imoNumber) {
     const existing = await prisma.ship.findFirst({
@@ -121,7 +142,11 @@ export async function createShip(
     });
     if (existing) throw new AppError('IMO numarası zaten kayıtlı', 400);
   }
-  return prisma.ship.create({ data: { ...data, companyId, createdById: userId } });
+  const ship = await prisma.ship.create({ data: { ...data, companyId, createdById: userId } });
+  await prisma.shipLog.create({
+    data: { shipId: ship.id, userId, action: 'CREATED', note: 'Gemi kaydı oluşturuldu' },
+  });
+  return ship;
 }
 
 /**
@@ -133,6 +158,11 @@ export async function createShip(
  * @returns Updated ship record
  * @throws {AppError} If ship is not found (404) or new IMO number already exists (400)
  */
+const TRACKED_SHIP_FIELDS = [
+  'owner', 'technicalManager', 'flag', 'classificationSociety',
+  'dwt', 'grossTonnage', 'status', 'customerRelationType',
+];
+
 export async function updateShip(
   id: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -149,7 +179,21 @@ export async function updateShip(
     });
     if (existing) throw new AppError('IMO numarası zaten kayıtlı', 400);
   }
-  return prisma.ship.update({ where: { id }, data: { ...data, updatedById: userId } });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const logEntries: any[] = [];
+  for (const field of TRACKED_SHIP_FIELDS) {
+    if (field in data && String(data[field] ?? '') !== String((s as any)[field] ?? '')) {
+      logEntries.push({
+        shipId: id, userId: userId ?? null, action: 'UPDATED',
+        field, oldValue: String((s as any)[field] ?? ''), newValue: String(data[field] ?? ''),
+      });
+    }
+  }
+  const updated = await prisma.ship.update({ where: { id }, data: { ...data, updatedById: userId } });
+  if (logEntries.length > 0) {
+    await prisma.shipLog.createMany({ data: logEntries });
+  }
+  return updated;
 }
 
 /**
@@ -200,4 +244,67 @@ export async function getFlagOptions(companyId: string | null) {
     orderBy: { flag: 'asc' },
   });
   return rows.map((r) => r.flag).filter(Boolean) as string[];
+}
+
+// ── Ship Billing Entities ────────────────────────────────────────────────────
+
+export async function getBillingEntities(shipId: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  return prisma.shipBillingEntity.findMany({
+    where: { shipId, ...tenantFilter },
+    orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+  });
+}
+
+export async function createBillingEntity(
+  shipId: string,
+  data: {
+    entityName: string;
+    entityAddress?: string;
+    entityTaxNo?: string;
+    entityCountry?: string;
+    entityEmail?: string;
+    isDefault?: boolean;
+    notes?: string;
+  },
+  companyId: string
+) {
+  const ship = await prisma.ship.findFirst({ where: { id: shipId, companyId, deletedAt: null } });
+  if (!ship) throw new AppError('Ship not found', 404);
+  if (data.isDefault) {
+    await prisma.shipBillingEntity.updateMany({ where: { shipId, companyId }, data: { isDefault: false } });
+  }
+  return prisma.shipBillingEntity.create({ data: { ...data, shipId, companyId } });
+}
+
+export async function updateBillingEntity(
+  id: string,
+  data: {
+    entityName?: string;
+    entityAddress?: string;
+    entityTaxNo?: string;
+    entityCountry?: string;
+    entityEmail?: string;
+    isDefault?: boolean;
+    notes?: string;
+  },
+  companyId: string | null
+) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.shipBillingEntity.findFirst({ where: { id, ...tenantFilter } });
+  if (!existing) throw new AppError('Billing entity not found', 404);
+  if (data.isDefault) {
+    await prisma.shipBillingEntity.updateMany({
+      where: { shipId: existing.shipId, companyId: existing.companyId },
+      data: { isDefault: false },
+    });
+  }
+  return prisma.shipBillingEntity.update({ where: { id }, data });
+}
+
+export async function deleteBillingEntity(id: string, companyId: string | null) {
+  const tenantFilter = companyId ? { companyId } : {};
+  const existing = await prisma.shipBillingEntity.findFirst({ where: { id, ...tenantFilter } });
+  if (!existing) throw new AppError('Billing entity not found', 404);
+  return prisma.shipBillingEntity.delete({ where: { id } });
 }

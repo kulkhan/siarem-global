@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { authenticate } from '../middleware/auth.middleware';
 import { env } from '../config/env';
-import { list, getOne, create, update, remove, shipTypeList, flagOptions } from '../controllers/ships.controller';
+import { list, getOne, create, update, remove, shipTypeList, flagOptions, listBillingEntities, createBillingEntity, updateBillingEntity, deleteBillingEntity } from '../controllers/ships.controller';
 import * as certCtrl from '../controllers/shipCertificates.controller';
 import * as certDocCtrl from '../controllers/certDocuments.controller';
 
@@ -36,6 +36,12 @@ router.get('/:id', getOne);
 router.post('/', create);
 router.put('/:id', update);
 router.delete('/:id', remove);
+
+// Ship billing entity endpoints
+router.get('/:id/billing-entities', listBillingEntities);
+router.post('/:id/billing-entities', createBillingEntity);
+router.put('/:id/billing-entities/:entityId', updateBillingEntity);
+router.delete('/:id/billing-entities/:entityId', deleteBillingEntity);
 
 // Ship certificate endpoints
 router.get('/:id/certificates', certCtrl.list);

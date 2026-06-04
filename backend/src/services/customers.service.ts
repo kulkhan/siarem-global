@@ -53,7 +53,7 @@ export async function getCustomers(q: CustomerQuery, companyId: string | null) {
       skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy,
-      include: { _count: { select: { ships: true } } },
+      include: { _count: { select: { ships: { where: { deletedAt: null } } } } },
     }),
     prisma.customer.count({ where }),
   ]);
@@ -73,12 +73,23 @@ export async function getCustomerById(id: string, companyId: string | null) {
   const c = await prisma.customer.findFirst({
     where: { id, deletedAt: null, ...tenantFilter },
     include: {
-      _count: { select: { ships: true, services: true, invoices: true } },
+      _count: { select: { ships: { where: { deletedAt: null } }, services: true, invoices: true } },
       contacts: { where: { deletedAt: null }, orderBy: { isPrimary: 'desc' } },
       bankAccounts: { orderBy: { sortOrder: 'asc' } },
       assignees: {
         include: { user: { select: { id: true, name: true, email: true, role: true } } },
         orderBy: { assignedAt: 'asc' },
+      },
+      ships: {
+        where: { deletedAt: null },
+        select: { id: true, name: true, imoNumber: true, status: true, flag: true, grossTonnage: true },
+        orderBy: { name: 'asc' },
+      },
+      parentCustomer: { select: { id: true, name: true, shortCode: true } },
+      subCustomers: {
+        where: { deletedAt: null },
+        select: { id: true, name: true, shortCode: true, isActive: true },
+        orderBy: { name: 'asc' },
       },
     },
   });
@@ -105,6 +116,7 @@ export async function createCustomer(
     country?: string;
     taxNumber?: string;
     notes?: string;
+    parentCustomerId?: string;
   },
   userId?: string,
   companyId?: string
@@ -138,6 +150,7 @@ export async function updateCustomer(
     taxNumber?: string;
     notes?: string;
     isActive?: boolean;
+    parentCustomerId?: string | null;
   },
   userId?: string,
   companyId?: string | null

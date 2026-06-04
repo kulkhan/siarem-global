@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { X, Plus, Pencil, Trash2, Star, Phone, Mail, User, UserPlus, UserMinus, Building2, MessageSquare } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Star, Phone, Mail, User, UserPlus, UserMinus, Building2, MessageSquare, Ship as ShipIcon, Users } from 'lucide-react';
 import { customersApi, type BankAccount } from '@/api/customers';
 import { contactsApi, type Contact } from '@/api/contacts';
 import { usersApi } from '@/api/users';
@@ -255,6 +255,61 @@ export default function CustomerDetailDrawer({ customerId, onClose, onEdit }: Pr
                 <div className="text-xs text-gray-400">VKN: {customer.taxNumber}</div>
               )}
             </div>
+
+            {/* Parent customer */}
+            {(customer as any).parentCustomer && (
+              <div className="px-5 py-3 border-b border-gray-100">
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  {t('customers.parentCustomer')}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-700">
+                  <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span className="font-medium">{(customer as any).parentCustomer.name}</span>
+                  <span className="text-gray-400 font-mono">{(customer as any).parentCustomer.shortCode}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-customers */}
+            {(customer as any).subCustomers?.length > 0 && (
+              <div className="px-5 py-3 border-b border-gray-100">
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  {t('customers.subCustomers')} ({(customer as any).subCustomers.length})
+                </div>
+                <div className="space-y-1">
+                  {(customer as any).subCustomers.map((sc: { id: string; name: string; shortCode: string; isActive: boolean }) => (
+                    <div key={sc.id} className="flex items-center gap-2 text-xs">
+                      <Users className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="font-medium text-gray-700">{sc.name}</span>
+                      <span className="font-mono text-gray-400">{sc.shortCode}</span>
+                      {!sc.isActive && <span className="text-gray-300 text-[10px]">({t('status.passive')})</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Ships */}
+            {(customer as any).ships?.length > 0 && (
+              <div className="px-5 py-3 border-b border-gray-100">
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  {t('customers.ships')} ({(customer as any).ships.length})
+                </div>
+                <div className="space-y-1">
+                  {(customer as any).ships.map((ship: { id: string; name: string; imoNumber?: string; status: string; flag?: string; grossTonnage?: number }) => (
+                    <div key={ship.id} className="flex items-center gap-2 text-xs py-0.5">
+                      <ShipIcon className="w-3 h-3 text-blue-400 shrink-0" />
+                      <span className="font-medium text-gray-700">{ship.name}</span>
+                      {ship.imoNumber && <span className="text-gray-400 font-mono">IMO {ship.imoNumber}</span>}
+                      {ship.flag && <span className="text-gray-400">{ship.flag}</span>}
+                      <span className={`ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${ship.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {ship.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             {customer.notes && (
