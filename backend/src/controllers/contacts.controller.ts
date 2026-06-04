@@ -23,7 +23,8 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    const companyId = req.user?.companyId ?? undefined;
+    const companyId = req.user?.companyId;
+    if (!companyId) { res.status(400).json({ success: false, message: 'Company context required' }); return; }
     const data = await createContact(req.params.customerId, req.body, userId, companyId);
     await logAudit(req, 'Contact', 'CREATE', data.id);
     res.status(201).json({ success: true, data });

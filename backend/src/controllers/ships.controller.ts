@@ -52,7 +52,8 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    const companyId = req.user?.companyId ?? undefined;
+    const companyId = req.user?.companyId;
+    if (!companyId) { res.status(400).json({ success: false, message: 'Company context required' }); return; }
     const body = req.body;
     const data = await createShip({
       ...body,

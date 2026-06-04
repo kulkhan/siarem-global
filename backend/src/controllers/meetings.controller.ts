@@ -47,7 +47,8 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user?.sub;
-    const companyId = req.user?.companyId ?? undefined;
+    const companyId = req.user?.companyId;
+    if (!companyId) { res.status(400).json({ success: false, message: 'Company context required' }); return; }
     const data = await createMeeting(req.body, userId, companyId);
     await logAudit(req, 'Meeting', 'CREATE', data.id);
     res.status(201).json({ success: true, data });

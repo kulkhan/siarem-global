@@ -59,7 +59,8 @@ export async function getOne(req: Request, res: Response, next: NextFunction) {
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.sub;
-    const companyId = req.user?.companyId ?? undefined;
+    const companyId = req.user?.companyId;
+    if (!companyId) { res.status(400).json({ success: false, message: 'Company context required' }); return; }
     const data = await svc.createInvoice({ ...req.body, createdById: userId }, companyId);
     await logAudit(req, 'Invoice', 'CREATE', data.id);
     res.status(201).json({ success: true, data });
