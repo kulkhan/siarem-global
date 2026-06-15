@@ -257,8 +257,8 @@ export default function SettingsPage() {
       {/* Import tab (ADMIN only, not SUPER_ADMIN) */}
       {tab === 'import' && isAdmin && !isSuperAdmin && <ImportTab />}
 
-      {/* Email Router tab (ADMIN only, not SUPER_ADMIN) */}
-      {tab === 'email-router' && isAdmin && !isSuperAdmin && <EmailRouterTab />}
+      {/* Email Router tab (ADMIN only) */}
+      {tab === 'email-router' && isAdmin && <EmailRouterTab />}
 
       {/* Form Dialog */}
       {dialog && (
