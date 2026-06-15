@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
@@ -214,17 +214,9 @@ export default function EmailRouterTab() {
   });
   const logs = logsRes ?? [];
 
-  const { register, handleSubmit, getValues, formState: { errors, isDirty, isSubmitting } } = useForm<ConfigForm>({
+  const { register, handleSubmit, getValues, reset, formState: { errors, isDirty, isSubmitting } } = useForm<ConfigForm>({
     resolver: zodResolver(configSchema),
-    defaultValues: config ? {
-      host: config.host,
-      port: config.port,
-      username: config.username,
-      password: '',
-      useTls: config.useTls,
-      pollIntervalMinutes: config.pollIntervalMinutes,
-      isActive: config.isActive,
-    } : {
+    defaultValues: {
       host: '',
       port: 995,
       username: '',
@@ -234,6 +226,20 @@ export default function EmailRouterTab() {
       isActive: true,
     },
   });
+
+  useEffect(() => {
+    if (config) {
+      reset({
+        host: config.host,
+        port: config.port,
+        username: config.username,
+        password: '',
+        useTls: config.useTls,
+        pollIntervalMinutes: config.pollIntervalMinutes,
+        isActive: config.isActive,
+      });
+    }
+  }, [config, reset]);
 
   const saveMutation = useMutation({
     mutationFn: (data: ConfigForm) => emailConfigApi.save(data),
