@@ -77,7 +77,11 @@
     "required": "Zorunlu alan",
     "status": "Durum",
     "customer": "Müşteri",
-    "errorOccurred": "Bir hata oluştu"
+    "errorOccurred": "Bir hata oluştu",
+    "show": "Göster",
+    "hide": "Gizle",
+    "saved": "Kaydedildi",
+    "select": "Seçin"
   },
   "status": {
     "active": "Aktif",
@@ -761,7 +765,8 @@
       "status": "Durum",
       "priority": "Öncelik",
       "reportedAt": "Tarih",
-      "completedAt": "Tamamlanma"
+      "completedAt": "Tamamlanma",
+      "createdBy": "Ekleyen"
     },
     "type": {
       "FEATURE": "Yeni Özellik",
@@ -958,6 +963,49 @@
         "Birden fazla ödeme eklenebilir; her ödeme için tarih ve yöntem girilir",
         "Ödeme silindiğinde fatura durumu otomatik yeniden hesaplanır"
       ]
+    }
+  },
+  "emailRouter": {
+    "title": "E-posta Yönlendirme",
+    "sections": {
+      "config": "Ayarlar & Kurallar",
+      "logs": "İşlem Geçmişi"
+    },
+    "config": {
+      "title": "POP3 Bağlantısı",
+      "host": "Sunucu",
+      "port": "Port",
+      "username": "Kullanıcı Adı",
+      "password": "Şifre",
+      "passwordHint": "boş bırakılırsa değişmez",
+      "active": "Aktif",
+      "pollInterval": "Tarama aralığı",
+      "minutes": "dakika",
+      "lastPolled": "Son tarama",
+      "test": "Bağlantıyı Test Et",
+      "testSuccess": "Bağlantı başarılı!",
+      "testFailed": "Bağlantı başarısız",
+      "testFillRequired": "Sunucu, kullanıcı adı ve şifreyi doldurun"
+    },
+    "rules": {
+      "title": "Yönlendirme Kuralları",
+      "add": "Kural Ekle",
+      "edit": "Kural Düzenle",
+      "empty": "Henüz kural tanımlanmamış. Kural ekleyerek e-postaları otomatik olarak doğru kişiye yönlendirin.",
+      "name": "Kural Adı",
+      "description": "Açıklama",
+      "descriptionHint": "Claude bu metni kullanarak e-postayı sınıflandırır",
+      "assignedTo": "Atanacak Kişi",
+      "priority": "Öncelik",
+      "inactive": "Pasif"
+    },
+    "logs": {
+      "date": "Tarih",
+      "subject": "Konu / AI Gerekçe",
+      "from": "Gönderen",
+      "rule": "Kural",
+      "status": "Sonuç",
+      "empty": "Henüz işlenmiş e-posta yok"
     }
   }
 }

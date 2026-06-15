@@ -9,6 +9,8 @@ export interface DevTaskInput {
   priority?: string;
   reportedAt?: string;
   completedAt?: string | null;
+  createdByName?: string;
+  createdById?: string;
 }
 
 export async function getDevTasks() {

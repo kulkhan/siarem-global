@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { devTasksApi, DevTask } from '@/api/devTasks';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/auth.store';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -186,7 +187,9 @@ function TaskFormDialog({ task, onClose }: { task: DevTask | null; onClose: () =
 export default function DevTasksPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [dialogTask, setDialogTask] = useState<DevTask | null | 'new'>( null);
+  const user = useAuthStore(s => s.user);
+  const canManage = user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN';
+  const [dialogTask, setDialogTask] = useState<DevTask | null | 'new'>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { data: res, isLoading } = useQuery({
@@ -244,16 +247,17 @@ export default function DevTasksPage() {
               <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{t('devTasks.fields.title')}</th>
               <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-20">{t('devTasks.fields.priority')}</th>
               <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-28">{t('devTasks.fields.status')}</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-28">{t('devTasks.fields.createdBy')}</th>
               <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 w-24">{t('devTasks.fields.completedAt')}</th>
               <th className="px-4 py-2.5 w-20" />
             </tr>
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={7} className="text-center py-10 text-sm text-gray-400">{t('common.loading')}</td></tr>
+              <tr><td colSpan={8} className="text-center py-10 text-sm text-gray-400">{t('common.loading')}</td></tr>
             )}
             {!isLoading && tasks.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-10 text-sm text-gray-400">{t('devTasks.empty')}</td></tr>
+              <tr><td colSpan={8} className="text-center py-10 text-sm text-gray-400">{t('devTasks.empty')}</td></tr>
             )}
             {tasks.map(task => (
               <tr key={task.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
@@ -269,32 +273,37 @@ export default function DevTasksPage() {
                 </td>
                 <td className="px-4 py-2.5"><PriorityBadge priority={task.priority} /></td>
                 <td className="px-4 py-2.5"><StatusBadge status={task.status} /></td>
+                <td className="px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  {task.createdByName ?? '—'}
+                </td>
                 <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">
                   {task.completedAt ? new Date(task.completedAt).toLocaleDateString('tr-TR') : '—'}
                 </td>
                 <td className="px-4 py-2.5">
-                  <div className="flex items-center justify-end gap-1">
-                    {confirmDeleteId === task.id ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-gray-500">{t('common.deleteConfirm')}</span>
-                        <button onClick={() => deleteMutation.mutate(task.id)}
-                          className="text-[10px] text-red-600 font-semibold hover:underline">{t('common.yes')}</button>
-                        <button onClick={() => setConfirmDeleteId(null)}
-                          className="text-[10px] text-gray-500 font-semibold hover:underline">{t('common.no')}</button>
-                      </div>
-                    ) : (
-                      <>
-                        <button onClick={() => setDialogTask(task)}
-                          className="p-1 text-gray-400 hover:text-primary rounded transition-colors">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setConfirmDeleteId(task.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  {canManage && (
+                    <div className="flex items-center justify-end gap-1">
+                      {confirmDeleteId === task.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-gray-500">{t('common.deleteConfirm')}</span>
+                          <button onClick={() => deleteMutation.mutate(task.id)}
+                            className="text-[10px] text-red-600 font-semibold hover:underline">{t('common.yes')}</button>
+                          <button onClick={() => setConfirmDeleteId(null)}
+                            className="text-[10px] text-gray-500 font-semibold hover:underline">{t('common.no')}</button>
+                        </div>
+                      ) : (
+                        <>
+                          <button onClick={() => setDialogTask(task)}
+                            className="p-1 text-gray-400 hover:text-primary rounded transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => setConfirmDeleteId(task.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

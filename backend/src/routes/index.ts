@@ -19,6 +19,7 @@ import reportsRoutes from './reports.routes';
 import importRoutes from './import.routes';
 import devTasksRoutes from './devTasks.routes';
 import tasksRoutes from './tasks.routes';
+import emailRoutes from './emailConfig.routes';
 
 const router = Router();
 
@@ -42,6 +43,7 @@ router.use('/reports', reportsRoutes);
 router.use('/import', importRoutes);
 router.use('/dev-tasks', devTasksRoutes);
 router.use('/tasks', tasksRoutes);
+router.use('/email-router', emailRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

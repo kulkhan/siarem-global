@@ -6,7 +6,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', ctrl.list);
-router.post('/', requireRole('ADMIN', 'MANAGER', 'SUPER_ADMIN'), ctrl.create);
+router.post('/', ctrl.create);  // all authenticated users can submit
 router.put('/:id', requireRole('ADMIN', 'MANAGER', 'SUPER_ADMIN'), ctrl.update);
 router.delete('/:id', requireRole('ADMIN', 'SUPER_ADMIN'), ctrl.remove);
 

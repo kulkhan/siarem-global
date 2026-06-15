@@ -11,4 +11,5 @@ export const env = {
   // Google reCAPTCHA v2 — default is Google's public test key (always passes)
   // Replace with real key from https://www.google.com/recaptcha/admin in production
   recaptchaSecret: process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe',
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
 };

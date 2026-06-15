@@ -116,6 +116,9 @@ model Company {
   productTransactions  ProductTransaction[]
   tasks                Task[]
   shipBillingEntities  ShipBillingEntity[]
+  emailConfig          EmailConfig?
+  emailRules           EmailRule[]
+  emailLogs            EmailLog[]
 
   @@map("companies")
 }
@@ -155,6 +158,7 @@ model User {
   assignedTasks       Task[]               @relation("TaskAssignee")
   createdTasks        Task[]               @relation("TaskCreatedBy")
   shipLogs            ShipLog[]            @relation("ShipLogUser")
+  assignedEmailRules  EmailRule[]          @relation("EmailRuleAssignee")
 
   @@unique([companyId, email])
   @@map("users")
@@ -958,16 +962,18 @@ model Complaint {
 // ─────────────────────────────────────────
 
 model DevTask {
-  id          String    @id @default(cuid())
-  title       String
-  description String?
-  type        String    // FEATURE | BUG | IMPROVEMENT
-  status      String    @default("TODO") // TODO | IN_PROGRESS | DONE | CANCELLED
-  priority    String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
-  reportedAt  DateTime  @default(now()) @map("reported_at")
-  completedAt DateTime? @map("completed_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  type            String    // FEATURE | BUG | IMPROVEMENT
+  status          String    @default("TODO") // TODO | IN_PROGRESS | DONE | CANCELLED
+  priority        String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  reportedAt      DateTime  @default(now()) @map("reported_at")
+  completedAt     DateTime? @map("completed_at")
+  createdByName   String?   @map("created_by_name")
+  createdById     String?   @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@map("dev_tasks")
 }
@@ -997,4 +1003,71 @@ model Task {
   createdBy    User?    @relation("TaskCreatedBy", fields: [createdById], references: [id])
 
   @@map("tasks")
+}
+
+// ─────────────────────────────────────────
+// EMAIL ROUTER
+// ─────────────────────────────────────────
+
+model EmailConfig {
+  id                  String    @id @default(cuid())
+  companyId           String    @unique @map("company_id")
+  host                String
+  port                Int       @default(995)
+  username            String
+  password            String
+  useTls              Boolean   @default(true) @map("use_tls")
+  pollIntervalMinutes Int       @default(5) @map("poll_interval_minutes")
+  isActive            Boolean   @default(true) @map("is_active")
+  lastPolledAt        DateTime? @map("last_polled_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  company Company     @relation(fields: [companyId], references: [id])
+  rules   EmailRule[]
+  logs    EmailLog[]
+
+  @@map("email_configs")
+}
+
+model EmailRule {
+  id             String   @id @default(cuid())
+  companyId      String   @map("company_id")
+  emailConfigId  String   @map("email_config_id")
+  name           String
+  description    String   // fed to Claude as classification hint
+  assignedUserId String   @map("assigned_user_id")
+  priority       String   @default("MEDIUM")
+  isActive       Boolean  @default(true) @map("is_active")
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  company      Company     @relation(fields: [companyId], references: [id])
+  emailConfig  EmailConfig @relation(fields: [emailConfigId], references: [id], onDelete: Cascade)
+  assignedUser User        @relation("EmailRuleAssignee", fields: [assignedUserId], references: [id])
+  logs         EmailLog[]
+
+  @@map("email_rules")
+}
+
+model EmailLog {
+  id            String    @id @default(cuid())
+  companyId     String    @map("company_id")
+  emailConfigId String    @map("email_config_id")
+  messageUid    String    @map("message_uid")
+  subject       String?
+  fromAddress   String?   @map("from_address")
+  matchedRuleId String?   @map("matched_rule_id")
+  taskId        String?   @map("task_id")
+  aiReason      String?   @map("ai_reason")
+  status        String    @default("PROCESSED") // PROCESSED | UNMATCHED | ERROR
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  company     Company      @relation(fields: [companyId], references: [id])
+  emailConfig EmailConfig  @relation(fields: [emailConfigId], references: [id])
+  matchedRule EmailRule?   @relation(fields: [matchedRuleId], references: [id])
+
+  @@unique([emailConfigId, messageUid])
+  @@map("email_logs")
 }

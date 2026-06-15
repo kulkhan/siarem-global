@@ -12,7 +12,11 @@ export async function list(req: Request, res: Response) {
 
 export async function create(req: Request, res: Response) {
   try {
-    const data = await svc.createDevTask(req.body);
+    const data = await svc.createDevTask({
+      ...req.body,
+      createdByName: req.user?.name,
+      createdById: req.user?.sub,
+    });
     res.status(201).json({ success: true, data });
   } catch (e) {
     res.status(500).json({ success: false, message: String(e) });

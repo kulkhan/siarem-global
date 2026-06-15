@@ -87,7 +87,7 @@ export default function App() {
             <Route path="/reports/*" element={<ReportsPage />} />
             <Route path="/settings/*" element={<AdminOnly><SettingsPage /></AdminOnly>} />
             <Route path="/admin/companies" element={<SuperAdminOnly><CompaniesPage /></SuperAdminOnly>} />
-            <Route path="/admin/dev-tasks" element={<AdminOnly><DevTasksPage /></AdminOnly>} />
+            <Route path="/admin/dev-tasks" element={<DevTasksPage />} />
             <Route path="/help" element={<HelpPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

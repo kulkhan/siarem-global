@@ -28,7 +28,7 @@ const navItems = [
   { key: 'expenses', path: '/expenses', icon: Wallet, adminOnly: true },
   { key: 'documents', path: '/documents', icon: FolderOpen },
   { key: 'reports', path: '/reports', icon: BarChart3 },
-  { key: 'devTasks', path: '/admin/dev-tasks', icon: ClipboardList, adminOnly: true },
+  { key: 'devTasks', path: '/admin/dev-tasks', icon: ClipboardList },
   { key: 'settings', path: '/settings', icon: Settings, adminOnly: true },
   { key: 'ships', path: '/ships', icon: Ship, moduleRequired: 'SHIPS' },
 ];

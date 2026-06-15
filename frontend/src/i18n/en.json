@@ -77,7 +77,11 @@
     "required": "Required field",
     "status": "Status",
     "customer": "Customer",
-    "errorOccurred": "An error occurred"
+    "errorOccurred": "An error occurred",
+    "show": "Show",
+    "hide": "Hide",
+    "saved": "Saved",
+    "select": "Select"
   },
   "status": {
     "active": "Active",
@@ -750,7 +754,8 @@
       "status": "Status",
       "priority": "Priority",
       "reportedAt": "Date",
-      "completedAt": "Completed"
+      "completedAt": "Completed",
+      "createdBy": "Added By"
     },
     "type": {
       "FEATURE": "Feature",
@@ -947,6 +952,49 @@
         "Multiple payments can be added; each requires a date and payment method",
         "When a payment is deleted, the invoice status is automatically recalculated"
       ]
+    }
+  },
+  "emailRouter": {
+    "title": "Email Routing",
+    "sections": {
+      "config": "Settings & Rules",
+      "logs": "Activity Log"
+    },
+    "config": {
+      "title": "POP3 Connection",
+      "host": "Host",
+      "port": "Port",
+      "username": "Username",
+      "password": "Password",
+      "passwordHint": "leave blank to keep unchanged",
+      "active": "Active",
+      "pollInterval": "Poll interval",
+      "minutes": "minutes",
+      "lastPolled": "Last polled",
+      "test": "Test Connection",
+      "testSuccess": "Connection successful!",
+      "testFailed": "Connection failed",
+      "testFillRequired": "Fill in host, username and password first"
+    },
+    "rules": {
+      "title": "Routing Rules",
+      "add": "Add Rule",
+      "edit": "Edit Rule",
+      "empty": "No rules defined yet. Add rules to automatically route emails to the right person.",
+      "name": "Rule Name",
+      "description": "Description",
+      "descriptionHint": "Claude uses this text to classify emails",
+      "assignedTo": "Assign To",
+      "priority": "Priority",
+      "inactive": "Inactive"
+    },
+    "logs": {
+      "date": "Date",
+      "subject": "Subject / AI Reason",
+      "from": "From",
+      "rule": "Rule",
+      "status": "Result",
+      "empty": "No processed emails yet"
     }
   }
 }

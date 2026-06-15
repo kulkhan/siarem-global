@@ -9,6 +9,8 @@ export interface DevTask {
   priority: string;
   reportedAt: string;
   completedAt?: string | null;
+  createdByName?: string | null;
+  createdById?: string | null;
   createdAt: string;
 }
 

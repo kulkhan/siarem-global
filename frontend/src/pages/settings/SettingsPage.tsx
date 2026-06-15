@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Shield, ShieldCheck, ShieldAlert, Pencil, Trash2, KeyRound, Users, ClipboardList, Building2, AlertCircle, Tag, FileUp } from 'lucide-react';
+import { UserPlus, Shield, ShieldCheck, ShieldAlert, Pencil, Trash2, KeyRound, Users, ClipboardList, Building2, AlertCircle, Tag, FileUp, Mail } from 'lucide-react';
 import { usersApi } from '@/api/users';
 import { useAuthStore } from '@/store/auth.store';
 import { useTenantStore } from '@/store/tenant.store';
@@ -13,6 +13,7 @@ import AuditLogTab from './AuditLogTab';
 import ServiceTypesTab from './ServiceTypesTab';
 import CompanyProfileTab from './CompanyProfileTab';
 import ImportTab from './ImportTab';
+import EmailRouterTab from './EmailRouterTab';
 import type { User } from '@/types';
 
 const ROLE_BADGE: Record<string, { label: string; className: string; icon: typeof Shield }> = {
@@ -22,7 +23,7 @@ const ROLE_BADGE: Record<string, { label: string; className: string; icon: typeo
   USER:        { label: 'User',        className: 'bg-gray-100 text-gray-600',     icon: Shield },
 };
 
-type Tab = 'users' | 'service-types' | 'audit' | 'company' | 'import';
+type Tab = 'users' | 'service-types' | 'audit' | 'company' | 'import' | 'email-router';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -75,6 +76,7 @@ export default function SettingsPage() {
     { id: 'company', label: 'Firma', icon: Building2, adminOnly: true, superAdminHide: true },
     { id: 'audit', label: t('settings.tabs.audit'), icon: ClipboardList, adminOnly: true },
     { id: 'import', label: t('import.title'), icon: FileUp, adminOnly: true, superAdminHide: true },
+    { id: 'email-router', label: t('emailRouter.title'), icon: Mail, adminOnly: true, superAdminHide: true },
   ];
 
   return (
@@ -254,6 +256,9 @@ export default function SettingsPage() {
 
       {/* Import tab (ADMIN only, not SUPER_ADMIN) */}
       {tab === 'import' && isAdmin && !isSuperAdmin && <ImportTab />}
+
+      {/* Email Router tab (ADMIN only, not SUPER_ADMIN) */}
+      {tab === 'email-router' && isAdmin && !isSuperAdmin && <EmailRouterTab />}
 
       {/* Form Dialog */}
       {dialog && (
