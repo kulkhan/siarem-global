@@ -15,6 +15,7 @@ interface Rule {
 
 async function classifyEmail(
   subject: string,
+  from: string,
   body: string,
   rules: Rule[]
 ): Promise<{ ruleId: string; reason: string } | null> {
@@ -29,6 +30,7 @@ async function classifyEmail(
   const prompt = `Sen bir e-posta sınıflandırma asistanısın. Aşağıdaki e-postayı inceleyerek hangi kategoriye girdiğini belirle.
 
 E-posta:
+Kimden: ${from || '(bilinmiyor)'}
 Konu: ${subject || '(konu yok)'}
 İçerik: ${body.slice(0, 1200)}
 
@@ -110,7 +112,7 @@ async function pollConfig(config: {
         subject = parsed.subject;
         from = parsed.from;
 
-        const match = await classifyEmail(parsed.subject, parsed.body, config.rules);
+        const match = await classifyEmail(parsed.subject, parsed.from, parsed.body, config.rules);
 
         if (match) {
           const rule = config.rules.find(r => r.id === match.ruleId);
