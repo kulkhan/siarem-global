@@ -18,7 +18,7 @@ async function classifyEmail(
   from: string,
   body: string,
   rules: Rule[]
-): Promise<{ ruleId: string; reason: string } | null> {
+): Promise<{ ruleId: string; reason: string; summary: string } | null> {
   if (!env.anthropicApiKey || rules.length === 0) return null;
 
   const anthropic = new Anthropic({ apiKey: env.anthropicApiKey });
@@ -27,24 +27,24 @@ async function classifyEmail(
     .map((r, i) => `${i + 1}. ID: "${r.id}"\n   Kategori: ${r.name}\n   Açıklama: ${r.description}`)
     .join('\n\n');
 
-  const prompt = `Sen bir e-posta sınıflandırma asistanısın. Aşağıdaki e-postayı inceleyerek hangi kategoriye girdiğini belirle.
+  const prompt = `Sen bir e-posta sınıflandırma asistanısın. Aşağıdaki e-postayı inceleyerek hangi kategoriye girdiğini belirle ve içeriğini kısaca özetle.
 
 E-posta:
 Kimden: ${from || '(bilinmiyor)'}
 Konu: ${subject || '(konu yok)'}
-İçerik: ${body.slice(0, 1200)}
+İçerik: ${body.slice(0, 1500)}
 
 Kategoriler:
 ${rulesText}
 
 Yanıtını SADECE şu JSON formatında ver, başka hiçbir şey yazma:
-{"ruleId": "<kategori_id_veya_null>", "reason": "<kısa Türkçe açıklama>"}
+{"ruleId": "<kategori_id_veya_null>", "reason": "<kısa Türkçe eşleşme gerekçesi>", "summary": "<e-postanın 3-5 cümlelik Türkçe özeti, gereksiz imza/disclaimer kısımları hariç>"}
 
-Hiçbir kategori uymuyorsa ruleId değeri null olsun.`;
+Hiçbir kategori uymuyorsa ruleId değeri null olsun. summary her durumda doldurulmalı.`;
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 200,
+    max_tokens: 400,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -56,7 +56,7 @@ Hiçbir kategori uymuyorsa ruleId değeri null olsun.`;
     const parsed = JSON.parse(text);
     if (!parsed.ruleId) return null;
     const matched = rules.find(r => r.id === parsed.ruleId);
-    return matched ? { ruleId: parsed.ruleId, reason: parsed.reason ?? '' } : null;
+    return matched ? { ruleId: parsed.ruleId, reason: parsed.reason ?? '', summary: parsed.summary ?? '' } : null;
   } catch {
     return null;
   }
@@ -121,7 +121,7 @@ async function pollConfig(config: {
               data: {
                 companyId: config.companyId,
                 title: subject || '(E-postadan gelen görev)',
-                description: `${from ? `Kimden: ${from}\n` : ''}${parsed.body.slice(0, 800)}`,
+                description: `${from ? `Kimden: ${from}\n\n` : ''}${match.summary || parsed.body.slice(0, 800)}`,
                 assignedUserId: rule.assignedUserId,
                 priority: rule.priority,
                 status: 'TODO',
