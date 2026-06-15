@@ -60,6 +60,15 @@ export async function deleteRule(req: Request, res: Response, next: NextFunction
   } catch (err) { next(err); }
 }
 
+export async function rescan(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.companyId;
+    if (!companyId) { res.status(400).json({ success: false, message: 'Company context required' }); return; }
+    const count = await svc.rescanUnmatched(companyId);
+    res.json({ success: true, data: { resetCount: count } });
+  } catch (err) { next(err); }
+}
+
 export async function getLogs(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const companyId = req.user?.companyId;

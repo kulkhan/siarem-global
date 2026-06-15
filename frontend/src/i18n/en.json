@@ -986,7 +986,9 @@
       "descriptionHint": "Claude uses this text to classify emails",
       "assignedTo": "Assign To",
       "priority": "Priority",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "rescan": "Re-scan",
+      "rescanHint": "Re-process unmatched emails with new rules"
     },
     "logs": {
       "date": "Date",

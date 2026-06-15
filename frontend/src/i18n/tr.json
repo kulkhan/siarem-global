@@ -995,9 +995,11 @@
       "name": "Kural Adı",
       "description": "Açıklama",
       "descriptionHint": "Claude bu metni kullanarak e-postayı sınıflandırır",
-      "assignedTo": "Atanacak Kişi",
+      "assignedTo": "Atanacak Kişiler",
       "priority": "Öncelik",
-      "inactive": "Pasif"
+      "inactive": "Pasif",
+      "rescan": "Yeniden Tara",
+      "rescanHint": "Eşleşmeyen mailleri yeni kurallar ile tekrar işle"
     },
     "logs": {
       "date": "Tarih",

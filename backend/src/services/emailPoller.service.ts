@@ -7,7 +7,7 @@ interface Rule {
   id: string;
   name: string;
   description: string;
-  assignedUserId: string;
+  assignedUserIds: string[];
   priority: string;
 }
 
@@ -116,18 +116,25 @@ async function pollConfig(config: {
 
         if (match) {
           const rule = config.rules.find(r => r.id === match.ruleId);
-          if (rule) {
-            const task = await prisma.task.create({
-              data: {
-                companyId: config.companyId,
-                title: subject || '(E-postadan gelen görev)',
-                description: `${from ? `Kimden: ${from}\n\n` : ''}${match.summary || parsed.body.slice(0, 800)}`,
-                assignedUserId: rule.assignedUserId,
-                priority: rule.priority,
-                status: 'TODO',
-              },
-            });
-            taskId = task.id;
+          if (rule && rule.assignedUserIds.length > 0) {
+            const taskDescription = `${from ? `Kimden: ${from}\n\n` : ''}${match.summary || parsed.body.slice(0, 800)}`;
+            const taskTitle = subject || '(E-postadan gelen görev)';
+            // Create one task per assigned user
+            const tasks = await Promise.all(
+              rule.assignedUserIds.map(userId =>
+                prisma.task.create({
+                  data: {
+                    companyId: config.companyId,
+                    title: taskTitle,
+                    description: taskDescription,
+                    assignedUserId: userId,
+                    priority: rule.priority,
+                    status: 'TODO',
+                  },
+                })
+              )
+            );
+            taskId = tasks[0].id;
             matchedRuleId = rule.id;
             aiReason = match.reason;
             status = 'PROCESSED';
@@ -174,7 +181,7 @@ export async function pollAllActiveConfigs() {
       rules: {
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
-        select: { id: true, name: true, description: true, assignedUserId: true, priority: true },
+        select: { id: true, name: true, description: true, assignedUserIds: true, priority: true },
       },
     },
   });

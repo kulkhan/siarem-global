@@ -5,11 +5,11 @@ export interface EmailRule {
   emailConfigId: string;
   name: string;
   description: string;
-  assignedUserId: string;
+  assignedUserIds: string[];
   priority: string;
   isActive: boolean;
   sortOrder: number;
-  assignedUser?: { id: string; name: string };
+  assignedUsers?: { id: string; name: string }[];
 }
 
 export interface EmailConfig {
@@ -52,7 +52,7 @@ export interface EmailRuleInput {
   emailConfigId: string;
   name: string;
   description: string;
-  assignedUserId: string;
+  assignedUserIds: string[];
   priority: string;
   sortOrder?: number;
 }
@@ -75,6 +75,9 @@ export const emailConfigApi = {
 
   deleteRule: (ruleId: string) =>
     api.delete(`/email-router/config/rules/${ruleId}`),
+
+  rescan: () =>
+    api.post<{ success: boolean; data: { resetCount: number } }>('/email-router/config/rescan', {}),
 
   getLogs: () =>
     api.get<{ success: boolean; data: EmailLog[] }>('/email-router/logs'),

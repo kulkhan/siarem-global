@@ -158,7 +158,6 @@ model User {
   assignedTasks       Task[]               @relation("TaskAssignee")
   createdTasks        Task[]               @relation("TaskCreatedBy")
   shipLogs            ShipLog[]            @relation("ShipLogUser")
-  assignedEmailRules  EmailRule[]          @relation("EmailRuleAssignee")
 
   @@unique([companyId, email])
   @@map("users")
@@ -1031,22 +1030,21 @@ model EmailConfig {
 }
 
 model EmailRule {
-  id             String   @id @default(cuid())
-  companyId      String   @map("company_id")
-  emailConfigId  String   @map("email_config_id")
-  name           String
-  description    String   // fed to Claude as classification hint
-  assignedUserId String   @map("assigned_user_id")
-  priority       String   @default("MEDIUM")
-  isActive       Boolean  @default(true) @map("is_active")
-  sortOrder      Int      @default(0) @map("sort_order")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  companyId       String   @map("company_id")
+  emailConfigId   String   @map("email_config_id")
+  name            String
+  description     String
+  assignedUserIds String[] @default([]) @map("assigned_user_ids")
+  priority        String   @default("MEDIUM")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  company      Company     @relation(fields: [companyId], references: [id])
-  emailConfig  EmailConfig @relation(fields: [emailConfigId], references: [id], onDelete: Cascade)
-  assignedUser User        @relation("EmailRuleAssignee", fields: [assignedUserId], references: [id])
-  logs         EmailLog[]
+  company     Company     @relation(fields: [companyId], references: [id])
+  emailConfig EmailConfig @relation(fields: [emailConfigId], references: [id], onDelete: Cascade)
+  logs        EmailLog[]
 
   @@map("email_rules")
 }

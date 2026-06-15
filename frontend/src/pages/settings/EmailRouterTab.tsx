@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   Mail, Plus, Trash2, Pencil, CheckCircle, XCircle, Loader2,
-  RefreshCw, AlertCircle, ChevronDown, ChevronUp,
+  RefreshCw, AlertCircle,
 } from 'lucide-react';
 import { emailConfigApi, type EmailRule } from '@/api/emailConfig';
 import { usersApi } from '@/api/users';
@@ -30,7 +30,7 @@ type ConfigForm = z.infer<typeof configSchema>;
 const ruleSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
-  assignedUserId: z.string().min(1),
+  assignedUserIds: z.array(z.string()).min(1, 'En az 1 kişi seçin'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
 });
 type RuleForm = z.infer<typeof ruleSchema>;
@@ -75,15 +75,26 @@ function RuleDialog({
   });
   const users = usersRes ?? [];
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RuleForm>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<RuleForm>({
     resolver: zodResolver(ruleSchema),
     defaultValues: rule ? {
       name: rule.name,
       description: rule.description,
-      assignedUserId: rule.assignedUserId,
+      assignedUserIds: rule.assignedUserIds,
       priority: rule.priority as RuleForm['priority'],
-    } : { priority: 'MEDIUM', assignedUserId: '', name: '', description: '' },
+    } : { priority: 'MEDIUM', assignedUserIds: [], name: '', description: '' },
   });
+
+  const selectedUserIds = watch('assignedUserIds');
+
+  function toggleUser(id: string) {
+    const current = selectedUserIds ?? [];
+    setValue(
+      'assignedUserIds',
+      current.includes(id) ? current.filter(x => x !== id) : [...current, id],
+      { shouldValidate: true }
+    );
+  }
 
   const mutation = useMutation({
     mutationFn: (data: RuleForm) =>
@@ -131,11 +142,20 @@ function RuleDialog({
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {t('emailRouter.rules.assignedTo')} *
               </label>
-              <select {...register('assignedUserId')} className={inputCls(errors.assignedUserId)}>
-                <option value="">{t('common.select')}</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-              {errors.assignedUserId && <p className="text-xs text-red-500 mt-0.5">{t('common.required')}</p>}
+              <div className={`border rounded p-2 max-h-36 overflow-y-auto space-y-1 ${errors.assignedUserIds ? 'border-red-400' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-800`}>
+                {users.map(u => (
+                  <label key={u.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 px-1 py-0.5 rounded">
+                    <input
+                      type="checkbox"
+                      checked={selectedUserIds?.includes(u.id) ?? false}
+                      onChange={() => toggleUser(u.id)}
+                      className="rounded"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{u.name}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.assignedUserIds && <p className="text-xs text-red-500 mt-0.5">{errors.assignedUserIds.message ?? t('common.required')}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -223,6 +243,14 @@ export default function EmailRouterTab() {
   const deleteRuleMutation = useMutation({
     mutationFn: (id: string) => emailConfigApi.deleteRule(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['email-config'] }); setConfirmDeleteRuleId(null); },
+  });
+
+  const rescanMutation = useMutation({
+    mutationFn: () => emailConfigApi.rescan(),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['email-logs', selectedCompanyId] });
+      alert(`${res.data.data.resetCount} e-posta sıfırlandı. Bir sonraki taramada yeni kurallar uygulanacak.`);
+    },
   });
 
   async function handleTest() {
@@ -402,9 +430,23 @@ export default function EmailRouterTab() {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                   {t('emailRouter.rules.title')}
                 </h3>
-                <Button size="sm" onClick={() => setRuleDialog('new')}>
-                  <Plus className="w-3.5 h-3.5 mr-1" />{t('emailRouter.rules.add')}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => rescanMutation.mutate()}
+                    disabled={rescanMutation.isPending}
+                    title={t('emailRouter.rules.rescanHint')}
+                  >
+                    {rescanMutation.isPending
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                      : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+                    {t('emailRouter.rules.rescan')}
+                  </Button>
+                  <Button size="sm" onClick={() => setRuleDialog('new')}>
+                    <Plus className="w-3.5 h-3.5 mr-1" />{t('emailRouter.rules.add')}
+                  </Button>
+                </div>
               </div>
 
               {rules.length === 0 ? (
@@ -437,8 +479,10 @@ export default function EmailRouterTab() {
                           )}
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{rule.description}</p>
-                        {rule.assignedUser && (
-                          <p className="text-xs text-primary mt-0.5">→ {rule.assignedUser.name}</p>
+                        {rule.assignedUsers && rule.assignedUsers.length > 0 && (
+                          <p className="text-xs text-primary mt-0.5">
+                            → {rule.assignedUsers.map(u => u.name).join(', ')}
+                          </p>
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">

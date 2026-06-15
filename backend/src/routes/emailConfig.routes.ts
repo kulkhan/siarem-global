@@ -9,6 +9,7 @@ router.use(requireRole('ADMIN', 'MANAGER'));
 router.get('/config', ctrl.getConfig);
 router.put('/config', ctrl.saveConfig);
 router.post('/config/test', ctrl.testConfig);
+router.post('/config/rescan', ctrl.rescan);
 
 router.post('/config/rules', ctrl.createRule);
 router.put('/config/rules/:ruleId', ctrl.updateRule);
