@@ -76,7 +76,7 @@ export default function SettingsPage() {
     { id: 'company', label: 'Firma', icon: Building2, adminOnly: true, superAdminHide: true },
     { id: 'audit', label: t('settings.tabs.audit'), icon: ClipboardList, adminOnly: true },
     { id: 'import', label: t('import.title'), icon: FileUp, adminOnly: true, superAdminHide: true },
-    { id: 'email-router', label: t('emailRouter.title'), icon: Mail, adminOnly: true, superAdminHide: true },
+    { id: 'email-router', label: t('emailRouter.title'), icon: Mail, adminOnly: true },
   ];
 
   return (

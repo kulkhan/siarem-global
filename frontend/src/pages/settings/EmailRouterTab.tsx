@@ -11,6 +11,8 @@ import {
 import { emailConfigApi, type EmailRule } from '@/api/emailConfig';
 import { usersApi } from '@/api/users';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/auth.store';
+import { useTenantStore } from '@/store/tenant.store';
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -168,6 +170,9 @@ function RuleDialog({
 export default function EmailRouterTab() {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { user: me } = useAuthStore();
+  const { selectedCompanyId } = useTenantStore();
+  const isSuperAdmin = me?.role === 'SUPER_ADMIN';
   const [section, setSection] = useState<'config' | 'logs'>('config');
   const [ruleDialog, setRuleDialog] = useState<EmailRule | null | 'new'>(null);
   const [confirmDeleteRuleId, setConfirmDeleteRuleId] = useState<string | null>(null);
@@ -176,15 +181,16 @@ export default function EmailRouterTab() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { data: configRes, isLoading } = useQuery({
-    queryKey: ['email-config'],
+    queryKey: ['email-config', selectedCompanyId],
     queryFn: () => emailConfigApi.get().then(r => r.data.data),
+    enabled: !isSuperAdmin || !!selectedCompanyId,
   });
   const config = configRes ?? null;
 
   const { data: logsRes } = useQuery({
-    queryKey: ['email-logs'],
+    queryKey: ['email-logs', selectedCompanyId],
     queryFn: () => emailConfigApi.getLogs().then(r => r.data.data),
-    enabled: section === 'logs',
+    enabled: section === 'logs' && (!isSuperAdmin || !!selectedCompanyId),
   });
   const logs = logsRes ?? [];
 
@@ -243,6 +249,18 @@ export default function EmailRouterTab() {
     } finally {
       setIsTesting(false);
     }
+  }
+
+  if (isSuperAdmin && !selectedCompanyId) {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl max-w-xl">
+        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-amber-800">Tenant seçilmedi</p>
+          <p className="text-sm text-amber-700 mt-0.5">E-posta yönlendirmeyi yapılandırmak için üst menüden bir şirket seçin.</p>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {
