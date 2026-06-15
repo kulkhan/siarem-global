@@ -804,7 +804,8 @@
     "fields": {
       "title": "Başlık",
       "description": "Açıklama",
-      "assignedUser": "Atanan Kişi",
+      "assignedUser": "Atanan Kişiler",
+      "category": "Kategori",
       "meeting": "Toplantı",
       "status": "Durum",
       "priority": "Öncelik",
@@ -829,7 +830,16 @@
       "search": "Görev ara...",
       "status": "Durum",
       "priority": "Öncelik",
+      "category": "Kategori",
       "assignedUser": "Atanan"
+    },
+    "close": {
+      "button": "Kapat",
+      "title": "Görevi Kapat",
+      "notePlaceholder": "İsteğe bağlı açıklama...",
+      "confirm": "Onayla & Kapat",
+      "closedBy": "Kapatan",
+      "closedNote": "Kapatma Notu"
     }
   },
   "help": {
@@ -995,6 +1005,8 @@
       "name": "Kural Adı",
       "description": "Açıklama",
       "descriptionHint": "Claude bu metni kullanarak e-postayı sınıflandırır",
+      "category": "Kategori",
+      "categoryPlaceholder": "ör. Teknik, Mevzuat, Ödeme...",
       "assignedTo": "Atanacak Kişiler",
       "priority": "Öncelik",
       "inactive": "Pasif",

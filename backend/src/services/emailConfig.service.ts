@@ -85,6 +85,7 @@ export async function createEmailRule(
     emailConfigId: string;
     name: string;
     description: string;
+    category?: string;
     assignedUserIds: string[];
     priority: string;
     sortOrder?: number;
@@ -104,6 +105,7 @@ export async function updateEmailRule(
   data: Partial<{
     name: string;
     description: string;
+    category: string;
     assignedUserIds: string[];
     priority: string;
     isActive: boolean;

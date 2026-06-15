@@ -30,6 +30,7 @@ type ConfigForm = z.infer<typeof configSchema>;
 const ruleSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
+  category: z.string().optional(),
   assignedUserIds: z.array(z.string()).min(1, 'En az 1 kişi seçin'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
 });
@@ -80,9 +81,10 @@ function RuleDialog({
     defaultValues: rule ? {
       name: rule.name,
       description: rule.description,
+      category: rule.category ?? '',
       assignedUserIds: rule.assignedUserIds,
       priority: rule.priority as RuleForm['priority'],
-    } : { priority: 'MEDIUM', assignedUserIds: [], name: '', description: '' },
+    } : { priority: 'MEDIUM', assignedUserIds: [], name: '', description: '', category: '' },
   });
 
   const selectedUserIds = watch('assignedUserIds');
@@ -121,6 +123,17 @@ function RuleDialog({
             <input {...register('name')} className={inputCls(errors.name)}
               placeholder="MRV / DCS İşlemleri" />
             {errors.name && <p className="text-xs text-red-500 mt-0.5">{t('common.required')}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+              {t('emailRouter.rules.category')}
+            </label>
+            <input
+              {...register('category')}
+              className={inputCls()}
+              placeholder={t('emailRouter.rules.categoryPlaceholder')}
+            />
           </div>
 
           <div>
@@ -475,6 +488,11 @@ export default function EmailRouterTab() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{rule.name}</span>
+                          {rule.category && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 font-medium">
+                              {rule.category}
+                            </span>
+                          )}
                           <span className={`text-xs ${PRIORITY_COLORS[rule.priority] ?? ''}`}>
                             {PRIORITY_LABELS[rule.priority]}
                           </span>

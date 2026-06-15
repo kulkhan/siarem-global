@@ -5,6 +5,7 @@ export interface EmailRule {
   emailConfigId: string;
   name: string;
   description: string;
+  category?: string | null;
   assignedUserIds: string[];
   priority: string;
   isActive: boolean;
@@ -52,6 +53,7 @@ export interface EmailRuleInput {
   emailConfigId: string;
   name: string;
   description: string;
+  category?: string;
   assignedUserIds: string[];
   priority: string;
   sortOrder?: number;

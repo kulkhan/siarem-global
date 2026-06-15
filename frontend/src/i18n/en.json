@@ -794,6 +794,7 @@
       "title": "Title",
       "description": "Description",
       "assignedUser": "Assigned To",
+      "category": "Category",
       "meeting": "Meeting",
       "status": "Status",
       "priority": "Priority",
@@ -818,7 +819,16 @@
       "search": "Search tasks...",
       "status": "Status",
       "priority": "Priority",
+      "category": "Category",
       "assignedUser": "Assigned To"
+    },
+    "close": {
+      "button": "Close",
+      "title": "Close Task",
+      "notePlaceholder": "Optional note...",
+      "confirm": "Confirm & Close",
+      "closedBy": "Closed By",
+      "closedNote": "Closing Note"
     }
   },
   "help": {
@@ -984,6 +994,8 @@
       "name": "Rule Name",
       "description": "Description",
       "descriptionHint": "Claude uses this text to classify emails",
+      "category": "Category",
+      "categoryPlaceholder": "e.g. Technical, Compliance, Payment...",
       "assignedTo": "Assign To",
       "priority": "Priority",
       "inactive": "Inactive",

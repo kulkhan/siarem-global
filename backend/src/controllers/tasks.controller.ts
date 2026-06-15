@@ -4,9 +4,9 @@ import * as svc from '../services/tasks.service';
 export async function list(req: Request, res: Response) {
   try {
     const companyId = req.user!.companyId ?? null;
-    const { page = '1', pageSize = '20', status, priority, assignedUserId, meetingId, sortBy, sortOrder } = req.query as Record<string, string>;
+    const { page = '1', pageSize = '20', status, priority, category, assignedUserId, meetingId, sortBy, sortOrder } = req.query as Record<string, string>;
     const result = await svc.getTasks(
-      { page: +page, pageSize: +pageSize, status, priority, assignedUserId, meetingId, sortBy, sortOrder: sortOrder as 'asc' | 'desc' },
+      { page: +page, pageSize: +pageSize, status, priority, category, assignedUserId, meetingId, sortBy, sortOrder: sortOrder as 'asc' | 'desc' },
       companyId
     );
     res.json({ success: true, ...result });
@@ -46,11 +46,34 @@ export async function update(req: Request, res: Response) {
   }
 }
 
+export async function close(req: Request, res: Response) {
+  try {
+    const companyId = req.user!.companyId ?? null;
+    const userId = req.user!.sub;
+    const role = req.user!.role;
+    const { note } = req.body as { note?: string };
+    const data = await svc.closeTask(req.params.id, userId, role, companyId, note);
+    res.json({ success: true, data });
+  } catch (e: any) {
+    res.status(e.statusCode ?? 500).json({ success: false, message: e.message });
+  }
+}
+
 export async function remove(req: Request, res: Response) {
   try {
     const companyId = req.user!.companyId ?? null;
     await svc.deleteTask(req.params.id, companyId);
     res.json({ success: true });
+  } catch (e: any) {
+    res.status(e.statusCode ?? 500).json({ success: false, message: e.message });
+  }
+}
+
+export async function getCategories(req: Request, res: Response) {
+  try {
+    const companyId = req.user!.companyId ?? null;
+    const data = await svc.getTaskCategories(companyId);
+    res.json({ success: true, data });
   } catch (e: any) {
     res.status(e.statusCode ?? 500).json({ success: false, message: e.message });
   }

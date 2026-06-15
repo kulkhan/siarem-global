@@ -982,19 +982,23 @@ model DevTask {
 // ─────────────────────────────────────────
 
 model Task {
-  id             String    @id @default(cuid())
-  companyId      String    @map("company_id")
-  title          String
-  description    String?
-  assignedUserId String?   @map("assigned_user_id")
-  meetingId      String?   @map("meeting_id")
-  status         String    @default("TODO") // TODO | IN_PROGRESS | DONE | CANCELLED
-  priority       String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
-  dueDate        DateTime? @map("due_date")
-  completedAt    DateTime? @map("completed_at")
-  createdById    String?   @map("created_by_id")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(cuid())
+  companyId       String    @map("company_id")
+  title           String
+  description     String?
+  assignedUserId  String?   @map("assigned_user_id")
+  assignedUserIds String[]  @default([]) @map("assigned_user_ids")
+  category        String?
+  meetingId       String?   @map("meeting_id")
+  status          String    @default("TODO") // TODO | IN_PROGRESS | DONE | CANCELLED
+  priority        String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  dueDate         DateTime? @map("due_date")
+  completedAt     DateTime? @map("completed_at")
+  closedNote      String?   @map("closed_note")
+  closedById      String?   @map("closed_by_id")
+  createdById     String?   @map("created_by_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   company      Company  @relation(fields: [companyId], references: [id])
   assignedUser User?    @relation("TaskAssignee", fields: [assignedUserId], references: [id])
@@ -1035,6 +1039,7 @@ model EmailRule {
   emailConfigId   String   @map("email_config_id")
   name            String
   description     String
+  category        String?
   assignedUserIds String[] @default([]) @map("assigned_user_ids")
   priority        String   @default("MEDIUM")
   isActive        Boolean  @default(true) @map("is_active")

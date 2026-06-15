@@ -9,11 +9,16 @@ export interface Task {
   title: string;
   description?: string;
   assignedUserId?: string;
+  assignedUserIds: string[];
+  assignedUsers?: { id: string; name: string }[];
+  category?: string | null;
   meetingId?: string;
   status: TaskStatus;
   priority: TaskPriority;
   dueDate?: string;
   completedAt?: string;
+  closedNote?: string | null;
+  closedById?: string | null;
   createdById?: string;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +31,8 @@ export interface TaskInput {
   title: string;
   description?: string;
   assignedUserId?: string;
+  assignedUserIds?: string[];
+  category?: string;
   meetingId?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
@@ -37,6 +44,7 @@ export interface TaskListParams {
   pageSize?: number;
   status?: string;
   priority?: string;
+  category?: string;
   assignedUserId?: string;
   meetingId?: string;
   sortBy?: string;
@@ -58,6 +66,12 @@ export const tasksApi = {
   update: (id: string, data: Partial<TaskInput> & { status?: TaskStatus; completedAt?: string | null }) =>
     api.put<{ success: boolean; data: Task }>(`/tasks/${id}`, data),
 
+  close: (id: string, note?: string) =>
+    api.post<{ success: boolean; data: Task }>(`/tasks/${id}/close`, { note }),
+
   delete: (id: string) =>
     api.delete<{ success: boolean }>(`/tasks/${id}`),
+
+  getCategories: () =>
+    api.get<{ success: boolean; data: string[] }>('/tasks/categories'),
 };
