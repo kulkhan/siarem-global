@@ -17,7 +17,7 @@ export interface Quote {
   priceEur?: number;
   priceUsd?: number;
   priceTry?: number;
-  quoteDate: string;
+  quoteDate: string | null;
   validUntil?: string;
   acceptedAt?: string;
   acceptanceMethod?: string;

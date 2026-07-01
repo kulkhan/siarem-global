@@ -106,7 +106,7 @@ function headerHtml(companyLogoUrl: string | null | undefined, companyName: stri
 
 export interface PrintQuoteData {
   quoteNumber: string;
-  quoteDate: string;
+  quoteDate: string | null;
   validUntil?: string | null;
   status: string;
   notes?: string | null;
