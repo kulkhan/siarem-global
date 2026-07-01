@@ -89,6 +89,12 @@ export async function getServiceById(id: string, companyId: string | null) {
       ship: { select: { id: true, name: true, imoNumber: true } },
       serviceType: true,
       assignedUser: { select: { id: true, name: true } },
+      quotes: {
+        where: { deletedAt: null },
+        select: { id: true, quoteNumber: true, status: true, quoteDate: true },
+        orderBy: { createdAt: 'desc' as const },
+        take: 5,
+      },
       invoices: {
         orderBy: { createdAt: 'asc' },
         select: {

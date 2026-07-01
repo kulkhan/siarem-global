@@ -36,7 +36,7 @@ const schema = z.object({
   priceUsd: z.preprocess((v) => (v === '' || v == null ? undefined : Number(v)), z.number().optional()),
   priceTry: z.preprocess((v) => (v === '' || v == null ? undefined : Number(v)), z.number().optional()),
   shipIds: z.array(z.string()).optional(),
-  quoteDate: z.string().min(1, 'required'),
+  quoteDate: z.string().optional(),
   validUntil: z.string().optional(),
   acceptedAt: z.string().optional(),
   acceptanceMethod: z.string().optional(),
@@ -346,7 +346,7 @@ export default function QuoteFormDialog({ open, mode, quoteId, onClose, onSaved 
 
         {/* Section 3: Dates & Status */}
         <FormSection title={t('quotes.sections.dates')}>
-          <Field label={t('quotes.fields.quoteDate')} required error={errors.quoteDate ? t('common.error') : undefined}>
+          <Field label={t('quotes.fields.quoteDate')}>
             <Input {...register('quoteDate')} type="date" />
           </Field>
           <Field label={t('quotes.fields.validUntil')}>

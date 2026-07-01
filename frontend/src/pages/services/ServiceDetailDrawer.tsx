@@ -343,6 +343,18 @@ export default function ServiceDetailDrawer({ serviceId, onClose, onEdit }: Prop
                   </span>
                 </div>
               )}
+              {(svc as { quotes?: { id: string; quoteNumber: string; status: string; quoteDate?: string }[] }).quotes?.length ? (
+                <div className="flex items-start gap-2 text-sm">
+                  <span className="text-gray-500 w-24 shrink-0 text-xs">{t('nav.quotes')}</span>
+                  <div className="flex flex-wrap gap-1">
+                    {(svc as { quotes?: { id: string; quoteNumber: string; status: string; quoteDate?: string }[] }).quotes!.map((q) => (
+                      <span key={q.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[11px] font-mono font-medium">
+                        {q.quoteNumber}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {/* Billing pipeline */}

@@ -16,12 +16,13 @@ export interface QuoteQuery {
 
 const SORT_WHITELIST = ['quoteDate', 'createdAt', 'status', 'quoteNumber'];
 
-async function generateQuoteNumber(quoteDate: Date, companyId: string): Promise<string> {
+async function generateQuoteNumber(quoteDate: Date | null, companyId: string): Promise<string> {
+  const count = await prisma.quote.count({ where: { companyId } });
+  const seq = String(count + 1).padStart(5, '0');
+  if (!quoteDate) return `${seq}-ODDYSHIP`;
   const dd = String(quoteDate.getDate()).padStart(2, '0');
   const mm = String(quoteDate.getMonth() + 1).padStart(2, '0');
   const yyyy = quoteDate.getFullYear();
-  const count = await prisma.quote.count({ where: { companyId } });
-  const seq = String(count + 1).padStart(5, '0');
   return `${seq}-ODDYSHIP-${dd}${mm}${yyyy}`;
 }
 
@@ -142,7 +143,7 @@ export async function createQuote(data: {
   priceEur?: number | null;
   priceUsd?: number | null;
   priceTry?: number | null;
-  quoteDate: string;
+  quoteDate?: string;
   validUntil?: string;
   acceptedAt?: string;
   acceptanceMethod?: string;
@@ -154,7 +155,7 @@ export async function createQuote(data: {
 }, companyId?: string) {
   if (!companyId) throw new AppError('Tenant bilgisi eksik', 400);
   const { quoteDate, validUntil, acceptedAt, quoteNumber: providedQuoteNumber, items, shipIds, ...rest } = data;
-  const date = new Date(quoteDate);
+  const date = quoteDate ? new Date(quoteDate) : null;
   const quoteNumber = providedQuoteNumber || (await generateQuoteNumber(date, companyId));
 
   return prisma.$transaction(async (tx) => {
@@ -163,7 +164,7 @@ export async function createQuote(data: {
         ...rest,
         companyId,
         quoteNumber,
-        quoteDate: date,
+        ...(date ? { quoteDate: date } : {}),
         ...(validUntil ? { validUntil: new Date(validUntil) } : {}),
         ...(acceptedAt ? { acceptedAt: new Date(acceptedAt) } : {}),
         ...(shipIds && shipIds.length > 0
@@ -213,7 +214,7 @@ export async function updateQuote(
     priceEur?: number | null;
     priceUsd?: number | null;
     priceTry?: number | null;
-    quoteDate?: string;
+    quoteDate?: string | null;
     validUntil?: string | null;
     acceptedAt?: string | null;
     acceptanceMethod?: string | null;
@@ -240,7 +241,7 @@ export async function updateQuote(
       data: {
         ...rest,
         updatedById: userId,
-        ...(quoteDate ? { quoteDate: new Date(quoteDate) } : {}),
+        ...(quoteDate !== undefined ? { quoteDate: quoteDate ? new Date(quoteDate) : null } : {}),
         ...(validUntil !== undefined ? { validUntil: validUntil ? new Date(validUntil) : null } : {}),
         ...(acceptedAt !== undefined ? { acceptedAt: acceptedAt ? new Date(acceptedAt) : null } : {}),
       },

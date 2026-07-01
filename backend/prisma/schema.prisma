@@ -496,7 +496,7 @@ model Quote {
   priceEur          Float?
   priceUsd          Float?
   priceTry          Float?
-  quoteDate         DateTime
+  quoteDate         DateTime?
   validUntil        DateTime?
   acceptedAt        DateTime?   @map("accepted_at")
   acceptanceMethod  String?     @map("acceptance_method") // EMAIL | PHONE | WHATSAPP | OTHER

@@ -103,7 +103,7 @@ function useColumns(): Column<Quote>[] {
       key: 'quoteDate',
       label: t('quotes.fields.quoteDate'),
       sortable: true,
-      render: (row) => new Date(row.quoteDate).toLocaleDateString('tr-TR'),
+      render: (row) => row.quoteDate ? new Date(row.quoteDate).toLocaleDateString('tr-TR') : '—',
     },
   ];
 }

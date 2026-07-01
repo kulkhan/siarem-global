@@ -114,7 +114,7 @@ export default function ServiceFormDialog({ open, mode, serviceId, onClose, onSa
         completedAt: existing.completedAt ? existing.completedAt.slice(0, 10) : '',
         statusNote: existing.statusNote ?? '',
         notes: existing.notes ?? '',
-        quoteId: (existing as { quoteId?: string }).quoteId ?? '',
+        quoteId: (existing as { quotes?: { id: string }[] }).quotes?.[0]?.id ?? '',
         invoiceReady: existing.invoiceReady ?? false,
         invoiceReadyNote: existing.invoiceReadyNote ?? '',
       });

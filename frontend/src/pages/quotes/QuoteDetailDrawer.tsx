@@ -269,7 +269,7 @@ export default function QuoteDetailDrawer({ quoteId, onClose, onEdit }: Props) {
                     {t('quotes.fields.quoteDate')}
                   </div>
                   <div className="text-sm text-gray-700 mt-0.5">
-                    {new Date(quote.quoteDate).toLocaleDateString('tr-TR')}
+                    {quote.quoteDate ? new Date(quote.quoteDate).toLocaleDateString('tr-TR') : '—'}
                   </div>
                 </div>
                 {quote.validUntil && (
