@@ -60,7 +60,9 @@ export async function getQuotes(q: QuoteQuery, companyId: string | null) {
       where,
       skip: (page - 1) * pageSize,
       take: pageSize,
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: sortBy === 'quoteDate'
+        ? { quoteDate: { sort: sortOrder, nulls: 'last' } }
+        : { [sortBy]: sortOrder },
       include: {
         customer: { select: { id: true, name: true, shortCode: true } },
         service: {
