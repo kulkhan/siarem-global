@@ -2,7 +2,7 @@ import 'dotenv/config';
 import app from './app';
 import { env } from './config/env';
 import { prisma } from './lib/prisma';
-import { startEmailPoller } from './services/emailPoller.service';
+// import { startEmailPoller } from './services/emailPoller.service';
 
 async function bootstrap() {
   try {
@@ -14,7 +14,7 @@ async function bootstrap() {
       console.log(`   Environment: ${env.nodeEnv}`);
     });
 
-    startEmailPoller();
+    // startEmailPoller(); // devre dışı
   } catch (err) {
     console.error('❌ Failed to start server:', err);
     process.exit(1);
